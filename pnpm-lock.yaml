@@ -78,7 +78,7 @@ dependencies:
     specifier: ^10.19.6
     version: 10.20.0
   preact-render-to-string:
-    specifier: ^6.4.0
+    specifier: ^6.4.1
     version: 6.4.1(preact@10.20.0)
   pretty-bytes:
     specifier: ^6.1.1
