@@ -1,5 +1,7 @@
 ---
 title: Long Liangyou
-draft: true
 tags:
 ---
+%% 自我介绍 %%
+
+Hello world!
