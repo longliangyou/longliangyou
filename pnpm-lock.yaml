@@ -78,8 +78,8 @@ dependencies:
     specifier: ^10.19.6
     version: 10.20.0
   preact-render-to-string:
-    specifier: ^6.4.0
-    version: 6.4.1(preact@10.20.0)
+    specifier: ^6.4.2
+    version: 6.4.2(preact@10.20.0)
   pretty-bytes:
     specifier: ^6.1.1
     version: 6.1.1
@@ -2916,8 +2916,8 @@ packages:
     engines: {node: '>=8.6'}
     dev: false
 
-  /preact-render-to-string@6.4.1(preact@10.20.0):
-    resolution: {integrity: sha512-oHKIFIv+/N0i3fNRF4ANMr2I93maycuXK78ERJ0vUW+nz6MXXMO6mTOFxp3itvSVBS/GXtLAy2jio3ZPeD8lZQ==}
+  /preact-render-to-string@6.4.2(preact@10.20.0):
+    resolution: {integrity: sha512-Sio5SvlyZSAXHuvnMgYzVQd67lNIuQe4uSjJ+2gfpJNC6L8zoHQR5xV7B/EjIqrAYWVyJ2eACkTCxVrIzZi6Vw==}
     peerDependencies:
       preact: '>=10'
     dependencies:
