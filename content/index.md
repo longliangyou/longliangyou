@@ -7,7 +7,7 @@ tags:
 Hello!
 # 小游戏
 
-[看拼音写词语（二年级）](games/pinyin-game.html)
+[看拼音写词语（二年级）](https://longliangyou.github.io/longliangyou/static/games/pinyin-game.html)
 
 # 学习方法
 
