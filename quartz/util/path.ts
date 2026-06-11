@@ -43,7 +43,7 @@ export function isRelativeURL(s: string): s is RelativeURL {
 }
 
 export function getFullSlug(window: Window): FullSlug {
-  const res = window.document.body.dataset.slug! as FullSlug
+  const res = (window.document.body.dataset.slug ?? "") as FullSlug
   return res
 }
 
@@ -240,7 +240,10 @@ function isFolderPath(fplike: string): boolean {
   )
 }
 
-export function endsWith(s: string, suffix: string): boolean {
+export function endsWith(s: string | undefined, suffix: string): boolean {
+  if (s === undefined) {
+    return false
+  }
   return s === suffix || s.endsWith("/" + suffix)
 }
 
