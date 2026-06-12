@@ -1,4 +1,7 @@
 ---
+share: true
+---
+---
 aliases:
   - RIA 阅读法
 tags:
@@ -7,7 +10,7 @@ title: RIA 阅读法
 ---
 
 
-![[RIA 阅读法.png]]
+![RIA 阅读法.png](../RIA%20%E9%98%85%E8%AF%BB%E6%B3%95.png)
 
 # 什么是 RIA 阅读法？
 
