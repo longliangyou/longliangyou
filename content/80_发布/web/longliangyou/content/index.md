@@ -8,7 +8,7 @@ tags:
 Hello!
 # 玩中学
 
-<a href="https://longliangyou.github.io/longliangyou/static/pinyin-game.html" target="_blank">看拼音写词语（二年级）</a>
+[→ 玩中学游戏库](../../../../%E7%8E%A9%E4%B8%AD%E5%AD%A6/index.md)
 
 # 学习方法
 
