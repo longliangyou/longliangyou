@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>二年级下册数学 期末复习闯关</title>
+<style>
+  :root{
+    --bg1:#eaf6ff; --bg2:#fff6ea;
+    --card:#ffffff; --ink:#1f2d3d; --muted:#7a8aa0;
+    --brand:#2f7bff; --brand2:#37c2a8; --warm:#ff9a3c;
+    --ok:#27c08a; --bad:#ff6b6b; --line:#e6edf6;
+    --star:#ffc83d;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--ink);
+    background:linear-gradient(160deg,var(--bg1),var(--bg2));
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:14px 14px 30px;}
+  .hidden{display:none !important;}
+
+  /* 顶部条 */
+  .topbar{
+    display:flex;align-items:center;gap:10px;
+    background:var(--card);border-radius:18px;padding:10px 14px;
+    box-shadow:0 6px 18px rgba(47,123,255,.10);
+  }
+  .stars{font-size:20px;font-weight:800;color:var(--warm);white-space:nowrap;}
+  .stars small{font-size:13px;color:var(--muted);font-weight:600;}
+  .progress{flex:1;height:14px;background:var(--line);border-radius:10px;overflow:hidden;}
+  .progress > i{display:block;height:100%;width:0%;
+    background:linear-gradient(90deg,var(--brand2),var(--brand));
+    border-radius:10px;transition:width .4s ease;}
+  .iconbtn{
+    border:none;background:#eef4ff;color:var(--brand);
+    width:42px;height:42px;border-radius:12px;font-size:22px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .iconbtn:active{transform:scale(.92);}
+
+  /* 卡片 */
+  .card{
+    background:var(--card);border-radius:22px;margin-top:14px;
+    padding:18px 16px 20px;box-shadow:0 10px 30px rgba(31,45,61,.08);
+  }
+  .unittag{
+    display:inline-block;font-size:14px;font-weight:800;color:#fff;
+    background:linear-gradient(90deg,var(--brand),var(--brand2));
+    padding:4px 12px;border-radius:999px;
+  }
+  .qtext{font-size:clamp(18px,5.6vw,24px);font-weight:800;line-height:1.45;margin:clamp(8px,2.5vw,14px) 0 6px;}
+  .qsub{font-size:15px;color:var(--muted);margin-bottom:6px;}
+
+  /* 选项 */
+  .options{display:flex;flex-direction:column;gap:12px;margin-top:14px;}
+  .opt{
+    font-size:clamp(17px,5.2vw,22px);font-weight:700;text-align:left;
+    padding:clamp(11px,3.2vw,16px) 18px;border-radius:16px;border:3px solid var(--line);
+    background:#fafcff;cursor:pointer;transition:.15s;
+  }
+  .opt:active{transform:scale(.98);}
+  .opt.sel{border-color:var(--brand);background:#eef5ff;}
+  .opt.right{border-color:var(--ok);background:#e9fbf3;}
+  .opt.wrong{border-color:var(--bad);background:#ffeded;}
+  .opt.cmp{opacity:.55;}
+  .opts-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .opts-grid .opt{text-align:center;font-size:clamp(22px,7vw,30px);}
+
+  /* 填空 + 键盘 */
+  .blanks{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:18px 0 6px;}
+  .blank{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .blank label{font-size:16px;font-weight:700;color:var(--muted);}
+  .blank .box{
+    min-width:clamp(58px,17vw,74px);height:clamp(50px,14vw,64px);border-radius:14px;border:3px dashed #cdd9ea;
+    background:#f7faff;font-size:clamp(22px,7vw,30px);font-weight:800;color:var(--brand);
+    display:flex;align-items:center;justify-content:center;padding:0 10px;
+  }
+  .blank.active .box{border-style:solid;border-color:var(--brand);background:#eaf2ff;
+    box-shadow:0 0 0 4px rgba(47,123,255,.15);}
+  .keypad-host{
+    position:fixed;left:0;right:0;bottom:0;z-index:20;
+    background:#fff;box-shadow:0 -6px 22px rgba(31,45,61,.14);
+    border-top-left-radius:20px;border-top-right-radius:20px;
+    padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px));
+    transform:translateY(0);transition:transform .2s ease;
+  }
+  .keypad-host.hidden{display:none !important;}
+  .keypad-host .kpad{max-width:520px;margin:0 auto;}
+  .keypad-host .kphint{font-size:13px;color:var(--muted);text-align:center;margin-bottom:8px;font-weight:600;}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .key{
+    font-size:clamp(20px,6.2vw,26px);font-weight:800;padding:clamp(10px,2.8vw,13px) 0;border-radius:14px;border:none;
+    background:#eef4ff;color:var(--ink);cursor:pointer;
+  }
+  .key:active{transform:scale(.95);background:#dfeaff;}
+  .key.act{background:var(--brand);color:#fff;}
+  /* ===== 自适应布局：整屏 flex + 内容自动缩放，避免截断/滚动 ===== */
+  #game{position:fixed;inset:0;max-width:520px;margin:0 auto;height:100dvh;
+    display:flex;flex-direction:column;padding:8px 14px 10px;overflow:hidden;}
+  #game.hidden{display:none !important;}
+  #game .topbar{flex:0 0 auto;}
+  #qcard{flex:1 1 auto;overflow:hidden;display:flex;flex-direction:column;}
+  #cardInner{width:100%;transform-origin:top center;}
+
+  /* 连线 */
+  .match{display:flex;gap:14px;justify-content:space-between;margin-top:14px;}
+  .mcol{flex:1;display:flex;flex-direction:column;gap:12px;}
+  .mitem{
+    border:3px solid var(--line);border-radius:16px;background:#fafcff;
+    padding:10px;min-height:clamp(48px,13vw,60px);display:flex;align-items:center;justify-content:center;
+    font-size:clamp(16px,4.8vw,20px);font-weight:700;cursor:pointer;text-align:center;
+  }
+  .mitem.pick{border-color:var(--brand);background:#eef5ff;}
+  .mitem .badge{
+    display:inline-block;margin-left:8px;min-width:24px;height:24px;line-height:24px;
+    border-radius:50%;color:#fff;font-size:14px;
+  }
+
+  /* 主操作按钮 */
+  .actions{margin-top:18px;}
+  .btn{
+    width:100%;font-size:clamp(18px,5.5vw,22px);font-weight:800;color:#fff;border:none;
+    padding:clamp(12px,3.6vw,16px);border-radius:16px;cursor:pointer;
+    background:linear-gradient(90deg,var(--brand),var(--brand2));
+    box-shadow:0 8px 20px rgba(47,123,255,.25);
+  }
+  .btn:active{transform:scale(.98);}
+  .btn.ghost{background:#eef4ff;color:var(--brand);box-shadow:none;}
+  .btn[disabled]{opacity:.45;}
+
+  /* 反馈 */
+  .fb{margin-top:16px;border-radius:16px;padding:14px 16px;font-size:18px;font-weight:700;}
+  .fb.ok{background:#e9fbf3;color:#138a63;}
+  .fb.no{background:#fff1f1;color:#c43c3c;}
+  .fb .ans{font-size:20px;}
+  .fb .tip{font-weight:600;font-size:16px;margin-top:6px;color:var(--ink);}
+  .fb .again{font-size:14px;color:var(--muted);margin-top:6px;}
+
+  /* 高级题详解面板 */
+  .detail .dhead{font-weight:800;color:var(--ok);font-size:clamp(15px,4.5vw,18px);margin-bottom:4px;}
+  .detail h2{font-size:clamp(17px,5.2vw,22px);color:var(--brand);margin:6px 0 12px;line-height:1.35;}
+  .dsec{background:#f4f9ff;border-radius:14px;padding:10px 14px;margin-bottom:10px;}
+  .dsec>b{font-size:clamp(15px,4.4vw,17px);color:var(--ink);}
+  .dsec ul,.dsec ol{margin:8px 0 2px;padding-left:22px;}
+  .dsec li{font-size:clamp(14px,4.2vw,17px);line-height:1.55;margin:5px 0;font-weight:600;}
+  .dsec.alt{background:#fff7ec;}
+  .dsec.alt p{font-size:clamp(14px,4.2vw,17px);line-height:1.55;margin:6px 0 0;font-weight:600;color:#b5651d;}
+
+  /* 竖式 / 可视化 */
+  .visual{display:flex;justify-content:center;margin:8px 0 4px;max-width:100%;}
+  /* 防横向越界：SVG 响应式、长文本可断行、可视化不超卡片宽 */
+  .visual svg,.mitem svg{max-width:100%;height:auto;}
+  .qtext,.opt,.mitem,.qsub,.dsec li,.dsec p,.fb,.detail h2{overflow-wrap:break-word;}
+  .vsum,.vdiv,.placetab{max-width:100%;}
+  .mono{font-family:"DejaVu Sans Mono","SFMono-Regular",Menlo,Consolas,monospace;}
+  .vsum{display:inline-flex;flex-direction:column;align-items:flex-end;font-size:clamp(24px,8.5vw,34px);font-weight:800;line-height:1.25;}
+  .vsum .op{color:var(--warm);margin-right:14px;}
+  .vsum .line{height:4px;background:var(--ink);width:100%;border-radius:3px;margin:4px 0;}
+  .vsum .q{color:var(--brand);}
+  .vdiv{display:inline-flex;flex-direction:column;align-items:flex-start;font-size:clamp(22px,7.5vw,30px);font-weight:800;line-height:1.3;}
+  .vdiv .quo{color:var(--brand);margin-left:54px;}
+  .vdiv .frame{display:flex;align-items:flex-end;}
+  .vdiv .dsr{padding-right:6px;}
+  .vdiv .dbar{border-top:3px solid var(--ink);border-left:3px solid var(--ink);
+    border-top-left-radius:8px;padding:2px 8px 0 8px;}
+  .grid-icons{display:flex;flex-wrap:wrap;gap:6px;max-width:min(260px,100%);justify-content:center;}
+  .gi{width:26px;height:26px;border-radius:50%;background:var(--warm);display:inline-block;}
+  .gi.extra{background:#c9d4e6;}
+  .bar-row{display:flex;align-items:flex-start;gap:8px;margin:7px 0;}
+  .bar-row .lab{width:46px;flex:0 0 auto;font-size:15px;color:var(--muted);font-weight:700;padding-top:3px;}
+  .bar-row .cells{display:flex;flex-wrap:wrap;gap:5px;flex:1 1 auto;min-width:0;}
+  .bar-cell{width:26px;height:26px;border-radius:7px;flex:0 0 auto;}
+  .bar-a .bar-cell{background:var(--brand2);}
+  .bar-b .bar-cell{background:var(--warm);}
+  .placetab{border-collapse:collapse;font-size:22px;font-weight:800;}
+  .placetab th{background:#eef4ff;color:var(--muted);font-size:15px;padding:6px 14px;border:2px solid #dfeaff;}
+  .placetab td{padding:10px 14px;border:2px solid #dfeaff;text-align:center;color:var(--brand);}
+
+  /* 首页 / 结算 */
+  .hero{text-align:center;padding:28px 18px;}
+  .hero h1{font-size:30px;margin:8px 0;}
+  .hero p{color:var(--muted);font-size:16px;line-height:1.6;}
+  .hero .emoji{font-size:64px;}
+  .stat{display:flex;justify-content:space-around;margin:18px 0;flex-wrap:wrap;gap:12px;}
+  .stat .b{background:#f3f8ff;border-radius:16px;padding:14px 18px;min-width:90px;}
+  .stat .b b{display:block;font-size:28px;color:var(--brand);}
+  .stat .b span{font-size:13px;color:var(--muted);}
+
+  /* 弹跳表情 */
+  .pop{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);
+    font-size:90px;opacity:0;pointer-events:none;z-index:30;}
+  @keyframes popk{0%{opacity:0;transform:translate(-50%,-50%) scale(.3);}
+    30%{opacity:1;transform:translate(-50%,-60%) scale(1.15);}
+    100%{opacity:0;transform:translate(-50%,-90%) scale(1);}}
+  .pop.go{animation:popk .9s ease forwards;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 首页 -->
+  <div id="home" class="card hero">
+    <div class="emoji">🚀</div>
+    <h1>数学期末复习闯关</h1>
+    <p>人教版二年级下册 · 5个单元全覆盖<br>做错的题会再考你哦，全部答对才能通关！</p>
+    <div class="actions">
+      <button class="btn" id="startBtn">开始闯关</button>
+      <button class="btn ghost hidden" id="continueBtn" style="margin-top:12px;">继续上次</button>
+    </div>
+  </div>
+
+  <!-- 闯关页 -->
+  <div id="game" class="hidden">
+    <div class="topbar">
+      <div class="stars">⭐<span id="starN">0</span> <small id="progTxt">0/0</small></div>
+      <div class="progress"><i id="progBar"></i></div>
+      <button class="iconbtn" id="speakBtn" title="读题">🔊</button>
+    </div>
+    <div class="card" id="qcard"><div id="cardInner"></div></div>
+  </div>
+
+  <!-- 结算页 -->
+  <div id="done" class="card hero hidden">
+    <div class="emoji">🏆</div>
+    <h1>恭喜通关！</h1>
+    <div class="stat">
+      <div class="b"><b id="dTime">0:00</b><span>用时</span></div>
+      <div class="b"><b id="dRate">0%</b><span>一次答对率</span></div>
+      <div class="b"><b id="dLapse">0</b><span>错过次数</span></div>
+    </div>
+    <p id="dWord">你把所有易错题都攻克啦！</p>
+    <div class="actions">
+      <button class="btn" id="againBtn">再玩一轮（新题）</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 固定在底部的数字键盘（仅填空题显示） -->
+<div class="keypad-host hidden" id="keypadHost">
+  <div class="kpad">
+    <div class="kphint">点上方方框选择，再按数字填写，最后按 ✓ 确认</div>
+    <div class="keypad" id="keypadGrid"></div>
+  </div>
+</div>
+
+<div class="pop" id="pop">🎉</div>
+
+<script>
+"use strict";
+/* ============ 工具 ============ */
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=arr=>arr[rnd(0,arr.length-1)];
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* 音效（WebAudio，无外部文件） */
+let AC=null;
+function tone(freq,dur,type='sine',vol=.15){
+  try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type=type;o.frequency.value=freq;o.connect(g);g.connect(AC.destination);
+    g.gain.setValueAtTime(vol,AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+dur);
+    o.start();o.stop(AC.currentTime+dur);}catch(e){}
+}
+function dingOK(){tone(660,.12,'triangle');setTimeout(()=>tone(990,.18,'triangle'),110);}
+function buzzNo(){tone(200,.25,'sawtooth',.12);}
+
+/* 朗读 */
+function speak(t){
+  if(!t)return;
+  try{
+    const synth=window.speechSynthesis;if(!synth)return;
+    synth.cancel();
+    const u=new SpeechSynthesisUtterance(t);
+    u.lang='zh-CN';u.rate=.85;
+    const vs=synth.getVoices&&synth.getVoices();
+    if(vs&&vs.length){const zh=vs.find(v=>/zh|chinese|中文|普通话/i.test((v.lang||'')+(v.name||'')));if(zh)u.voice=zh;}
+    synth.speak(u);
+  }catch(e){}
+}
+
+/* 弹跳表情 */
+function popEmoji(e){
+  const p=$('#pop');p.textContent=e;p.classList.remove('go');void p.offsetWidth;p.classList.add('go');
+}
+
+/* ============ 可视化生成 ============ */
+function clockSVG(h,m,size=150){
+  const cx=size/2,cy=size/2,r=size/2-6;
+  let ticks='';
+  for(let i=0;i<12;i++){
+    const a=(i*30-90)*Math.PI/180;
+    const x1=cx+Math.cos(a)*(r-4),y1=cy+Math.sin(a)*(r-4);
+    const x2=cx+Math.cos(a)*(r-14),y2=cy+Math.sin(a)*(r-14);
+    ticks+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#9bb0cc" stroke-width="2"/>`;
+    const nx=cx+Math.cos(a)*(r-30),ny=cy+Math.sin(a)*(r-30);
+    const num=i===0?12:i;
+    ticks+=`<text x="${nx}" y="${ny+6}" font-size="16" font-weight="800" fill="#33506f" text-anchor="middle">${num}</text>`;
+  }
+  const ha=((h%12)+m/60)*30-90, ma=m*6-90;
+  const har=ha*Math.PI/180, mar=ma*Math.PI/180;
+  const hx=cx+Math.cos(har)*(r*.5), hy=cy+Math.sin(har)*(r*.5);
+  const mx=cx+Math.cos(mar)*(r*.78), my=cy+Math.sin(mar)*(r*.78);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" stroke="#2f7bff" stroke-width="4"/>
+    ${ticks}
+    <line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#1f2d3d" stroke-width="6" stroke-linecap="round"/>
+    <line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="#ff9a3c" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="5" fill="#1f2d3d"/></svg>`;
+}
+function vAdd(a,b){
+  return `<div class="vsum mono"><div>${a}</div><div><span class="op">+</span>${b}</div>
+    <div class="line"></div><div class="q">?</div></div>`;
+}
+function vSub(a,b){
+  return `<div class="vsum mono"><div>${a}</div><div><span class="op">−</span>${b}</div>
+    <div class="line"></div><div class="q">?</div></div>`;
+}
+function vDivide(N,d){
+  return `<div class="vdiv mono">
+    <div class="quo">? <span style="color:#7a8aa0">…… 余</span> ?</div>
+    <div class="frame"><span class="dsr">${d}</span><span class="dbar">${N}</span></div>
+  </div>`;
+}
+function groupIcons(total,per){
+  let s='';
+  for(let i=0;i<total;i++){s+=`<span class="gi ${i>=Math.floor(total/per)*per?'extra':''}"></span>`;}
+  return `<div class="grid-icons">${s}</div>`;
+}
+function barCompare(base,times,labA,labB){
+  const cell='<span class="bar-cell"></span>';
+  let rows=`<div class="bar-row bar-a"><span class="lab">${labA}</span><span class="cells">${cell.repeat(base)}</span></div>`;
+  rows+=`<div class="bar-row bar-b"><span class="lab">${labB}</span><span class="cells">${cell.repeat(base*times)}</span></div>`;
+  return `<div class="barcmp">${rows}</div>`;
+}
+function placeTable(num){
+  const s=String(num).padStart(4,'0');
+  return `<table class="placetab"><tr><th>千</th><th>百</th><th>十</th><th>个</th></tr>
+    <tr><td>${s[0]}</td><td>${s[1]}</td><td>${s[2]}</td><td>${s[3]}</td></tr></table>`;
+}
+
+/* 中文读法（用于读写题与朗读） */
+const DIG=['零','一','二','三','四','五','六','七','八','九'];
+function readNumCN(n){
+  if(n===0)return '零';
+  const s=String(n);const units=['','十','百','千'];
+  let res='';let zero=false;
+  for(let i=0;i<s.length;i++){
+    const d=+s[i];const u=s.length-1-i;
+    if(d===0){zero=true;}
+    else{ if(zero){res+='零';zero=false;} res+=DIG[d]+units[u]; }
+  }
+  if(res.startsWith('一十'))res=res.slice(1);
+  return res;
+}
+
+/* ============ 题目工厂 ============ */
+const COLORS=['#2f7bff','#ff9a3c','#37c2a8','#b06bff'];
+let UID=0;
+function C(unit,tag,q,options,ai,explain,speakT){
+  return {id:++UID,unit,tag,type:'choice',q,options,ai,explain,speak:speakT||q};
+}
+function F(unit,tag,q,visual,blanks,explain,speakT){
+  // blanks: [[label, answer], ...]
+  return {id:++UID,unit,tag,type:'fill',q,visual:visual||'',
+    blanks:blanks.map(b=>({label:b[0],ans:String(b[1])})),explain,speak:speakT||q};
+}
+function M(unit,tag,q,left,right,correct,explain,speakT){
+  // left/right: html arrays; correct[i]=index in right for left i
+  return {id:++UID,unit,tag,type:'match',q,left,right,correct,explain,speak:speakT||q};
+}
+
+/* ---- 各单元生成器（含必考边界点 must=true，及常规随机） ---- */
+function genU1(){ // 有余数的除法
+  const out=[];
+  // 最大余数边界
+  {const d=pick([4,5,6]),q=rnd(2,5),r=d-1,N=d*q+r;
+   out.push(F('有余数除法','最大余数',`${N} ÷ ${d} = ?（先想商，再想余数）`,
+     vDivide(N,d),[['商',q],['余数',r]],
+     `${N}÷${d}=${q}……${r}。记住：余数一定要比除数 ${d} 小！`,
+     `${N}除以${d}，商和余数各是多少`));}
+  // 整除 vs 有余对比（一道整除）
+  {const d=pick([3,4,5]),q=rnd(2,6),N=d*q;
+   out.push(F('有余数除法','整除（余0）',`${N} ÷ ${d} = ?`,vDivide(N,d),
+     [['商',q],['余数',0]],`${N}÷${d}=${q}，正好分完，余数是0。`,
+     `${N}除以${d}等于多少，余数是几`));}
+  // 进一法情境
+  {const per=pick([4,5]),groups=rnd(4,6),extra=rnd(1,per-1),N=per*groups+extra;
+   const ans=groups+1;
+   out.push(C('有余数除法','进一法',`${N}个同学去划船，每条船最多坐${per}人，至少要租几条船？`,
+     [`${groups}条`,`${ans}条`,`${groups+2}条`],1,
+     `${N}÷${per}=${groups}……${extra}，剩下的${extra}人也要一条船，所以${groups}+1=${ans}条。`,
+     `${N}个同学划船，每条船最多坐${per}人，至少租几条船`));}
+  // 去尾法情境
+  {const per=pick([3,4]),groups=rnd(4,6),extra=rnd(1,per-1),N=per*groups+extra;
+   out.push(C('有余数除法','去尾法',`${N}朵花，每${per}朵扎一束，最多能扎几束？`,
+     [`${groups}束`,`${groups+1}束`,`${groups+2}束`],0,
+     `${N}÷${per}=${groups}……${extra}，剩下的${extra}朵不够一束，要去掉，所以是${groups}束。`,
+     `${N}朵花每${per}朵一束，最多扎几束`));}
+  // 商含退位减 / 分组可视化
+  {const per=pick([3,4,5]),groups=rnd(2,4),extra=rnd(1,per-1),N=per*groups+extra;
+   out.push(F('有余数除法','看图分一分',`下面${N}个○，每${per}个一组，能分几组？还剩几个？`,
+     groupIcons(N,per),[['组数',groups],['剩下',extra]],
+     `每${per}个一组，${N}÷${per}=${groups}……${extra}，分了${groups}组，剩${extra}个。`,
+     `${N}个圆每${per}个一组，分几组剩几个`));}
+  return out;
+}
+function genU2(){ // 倍的认识
+  const out=[];
+  // 求几倍是多少（×）
+  {const a=rnd(3,6),t=rnd(2,4);
+   out.push(F('倍的认识','求几倍是多少(×)',`苹果有${a}个，梨的个数是苹果的${t}倍，梨有多少个？`,
+     barCompare(a,t,'苹果','梨'),[['梨',a*t]],
+     `求${a}的${t}倍，用乘法：${a}×${t}=${a*t}个。`,
+     `苹果${a}个，梨是苹果的${t}倍，梨有几个`));}
+  // 求一个数是另一个数的几倍（÷）
+  {const a=rnd(2,5),t=rnd(2,4),b=a*t;
+   out.push(F('倍的认识','求是几倍(÷)',`${b}是${a}的几倍？`,
+     barCompare(a,t,'小','大'),[['倍数',t]],
+     `求${b}里有几个${a}，用除法：${b}÷${a}=${t}，所以是${t}倍。`,
+     `${b}是${a}的几倍`));}
+  // 求一倍量
+  {const a=rnd(3,6),t=rnd(2,4),b=a*t;
+   out.push(F('倍的认识','求一倍量',`一个数的${t}倍是${b}，这个数是多少？`,'',
+     [['这个数',a]],`已知${t}倍是${b}，求1倍量用除法：${b}÷${t}=${a}。`,
+     `一个数的${t}倍是${b}，这个数是多少`));}
+  // 倍非单位 陷阱
+  {const a=rnd(3,5),t=rnd(2,3);
+   out.push(C('倍的认识','倍不是单位',`红花${a}朵，黄花是红花的${t}倍。黄花有多少朵？`,
+     [`${a*t}倍`,`${a*t}朵`,`${a+t}朵`],1,
+     `“倍”是关系不是单位！黄花有 ${a}×${t}=${a*t} 朵，要写“朵”。`,
+     `红花${a}朵，黄花是它的${t}倍，黄花几朵`));}
+  // 连线：表达式↔结果
+  {const items=[[2,3],[3,4],[4,2],[5,3]].map(([x,y])=>({txt:`${x}的${y}倍`,val:x*y}));
+   const right=shuffle(items.map(it=>it.val));
+   const correct=items.map(it=>right.indexOf(it.val));
+   out.push(M('倍的认识','倍数连线','把算式和得数连起来（先点左边，再点右边）',
+     items.map(it=>it.txt),right.map(v=>String(v)),correct,
+     '“几的几倍”用乘法算出得数。',
+     '把左边算式和右边得数连起来'));}
+  return out;
+}
+function genU3(){ // 万以内数
+  const out=[];
+  const mkRead=(n,tag)=>{
+    const correct=readNumCN(n);
+    const set=new Set([correct]);
+    const cands=[correct.replace(/零/g,''),               // 漏读“零”
+      readNumCN(n+(n%1000>=900?-100:100)),                 // 邻近数
+      readNumCN(n>5000?n-1000:n+1000)];                    // 改千位
+    const wrongs=[];
+    for(const c of cands){if(c&&!set.has(c)){set.add(c);wrongs.push(c);}if(wrongs.length>=2)break;}
+    while(wrongs.length<2){const w=correct+DIG[rnd(1,9)];if(!set.has(w)){set.add(w);wrongs.push(w);}}
+    const fin=shuffle([correct,...wrongs]);
+    const q=C('万以内数',tag,`${n} 读作？`,fin,fin.indexOf(correct),
+      `${n}读作“${correct}”。中间有0要读“零”，末尾的0不读。`,`${n}怎么读`);
+    q.noSpeak=true; // 读数题朗读会直接念出读法（暴露答案），不播报
+    return q;
+  };
+  out.push(mkRead(pick([4008,3006,5007]),'中间有0读法'));
+  out.push(mkRead(pick([3060,2050,4080]),'末尾有0读法'));
+  // 数位表填空
+  {const n=pick([4008,3650,2807]);const s=String(n).padStart(4,'0');
+   out.push(F('万以内数','数位认识',`${n} 里，每个数位上是几？`,placeTable(n),
+     [['千位',+s[0]],['百位',+s[1]],['十位',+s[2]],['个位',+s[3]]],
+     `从左到右是 千、百、十、个位。${n}的千位${+s[0]}、百位${+s[1]}、十位${+s[2]}、个位${+s[3]}。`,
+     `${n}里千百十个位各是几`));}
+  // 比大小
+  {const a=rnd(1000,9999),b=rnd(1000,9999);const sym=a>b?'>':(a<b?'<':'=');
+   out.push(C('万以内数','比大小',`${a} 〇 ${b}，应该填哪个符号？`,['>','<','='],['>','<','='].indexOf(sym),
+     `位数相同就从最高位（千位）比起。${a} ${sym} ${b}。`,`${a}和${b}比，填大于小于还是等于`));}
+  // 近似数
+  {const base=rnd(11,49)*100, n=base+pick([-30,-20,20,30]); const approx=Math.round(n/100)*100;
+   const opts=shuffle([approx,approx+100,approx-100]);
+   out.push(C('万以内数','近似数',`${n} 最接近下面哪个整百数？`,opts.map(String),opts.indexOf(approx),
+     `看十位四舍五入：${n}≈${approx}。`,`${n}最接近哪个整百数`));}
+  // 最大/最小四位数
+  out.push(F('万以内数','最大四位数','最大的四位数是多少？','',[['答案',9999]],
+    '最大的四位数是9999，再加1就是最小的五位数10000。','最大的四位数是多少'));
+  return out;
+}
+function genU4(){ // 万以内加减法
+  const out=[];
+  // 连续进位加
+  {let a=rnd(150,450),b=rnd(150,450);
+   while(!((a%100+b%100>=100)&&(Math.floor(a/10)%10+Math.floor(b/10)%10+1>=10))){a=rnd(150,450);b=rnd(150,450);}
+   out.push(F('万以内加减','连续进位加',`${a} + ${b} = ?`,vAdd(a,b),[['和',a+b]],
+     `个位、十位都要进位。${a}+${b}=${a+b}。`,`${a}加${b}等于多少`));}
+  // 连续退位减
+  {let a=rnd(300,800),b=rnd(150,290);
+   while(!((a%10<b%10)&&(Math.floor(a/10)%10<=Math.floor(b/10)%10))){a=rnd(300,800);b=rnd(150,290);}
+   out.push(F('万以内加减','连续退位减',`${a} − ${b} = ?`,vSub(a,b),[['差',a-b]],
+     `个位不够减向十位借，十位也不够再向百位借。${a}−${b}=${a-b}。`,`${a}减${b}等于多少`));}
+  // 中间有0退位（重点）
+  {const a=pick([500,403,600,702]); const b=rnd(120,290);
+   out.push(F('万以内加减','中间0退位',`${a} − ${b} = ?`,vSub(a,b),[['差',a-b]],
+     `中间是0又要被借位：先从前一位借，0变成9。${a}−${b}=${a-b}。`,`${a}减${b}等于多少`));}
+  // 和为整百/整千
+  {const a=rnd(120,480);const b=pick([1000,500,800])-a;
+   out.push(F('万以内加减','凑整',`${a} + ${b} = ?`,vAdd(a,b),[['和',a+b]],
+     `${a}+${b}正好凑成整${a+b>=1000?'千':'百'}数 ${a+b}。`,`${a}加${b}等于多少`));}
+  // 关系填空
+  {const minu=rnd(300,800),sub=rnd(100,minu-50),dif=minu-sub;
+   out.push(F('万以内加减','部分间关系',`一道减法里，差是${dif}，减数是${sub}，被减数是多少？`,'',
+     [['被减数',minu]],`被减数 = 差 + 减数 = ${dif}+${sub}=${minu}。`,
+     `差是${dif}，减数是${sub}，被减数是多少`));}
+  // 口算
+  {const a=rnd(20,80),b=rnd(11,40);
+   out.push(F('万以内加减','口算',`${a} + ${b} = ?`,'',[['答案',a+b]],
+     `先算整十，再加个位。${a}+${b}=${a+b}。`,`${a}加${b}等于多少`));}
+  return out;
+}
+function genU5(){ // 认识时间
+  const out=[];
+  // 接近整点易错
+  {const h=rnd(1,11),m=pick([55,50]);
+   out.push(F('认识时间','接近整点',`钟面上是几时几分？`,clockSVG(h,m),
+     [['时',h],['分',m]],
+     `分针快指到12了，但还没到，所以还是${h}时${m}分，别读成${h+1}时哦！`,
+     `钟面上是几时几分`));}
+  // 整点/半点
+  {const h=rnd(1,11),m=pick([0,30]);
+   out.push(F('认识时间','整点半点',`钟面上是几时几分？`,clockSVG(h,m),
+     [['时',h],['分',m]],`分针指${m===0?'12就是整点':'6就是半点（30分）'}。读作${h}时${m}分。`,
+     `钟面上是几时几分`));}
+  // 几时5分易错
+  {const h=rnd(1,11),m=pick([5,10,55]);
+   out.push(F('认识时间','几时几分',`钟面上是几时几分？`,clockSVG(h,m),
+     [['时',h],['分',m]],`分针指一个数，就是几个5分。这里是${h}时${m}分。`,
+     `钟面上是几时几分`));}
+  // 经过时间跨小时
+  {const sh=rnd(1,9),sm=pick([40,45,50]),dur=pick([20,30,25]);
+   let tot=sm+dur, eh=sh+Math.floor(tot/60), em=tot%60;
+   out.push(F('认识时间','经过时间',`现在是 ${sh}:${String(sm).padStart(2,'0')}，再过${dur}分钟是几时几分？`,
+     clockSVG(sh,sm),[['时',eh],['分',em]],
+     `${sm}+${dur}=${sm+dur}分，超过60要进1时：结果是${eh}时${em}分。`,
+     `${sh}时${sm}分再过${dur}分钟是几时几分`));}
+  // 1时=60分
+  out.push(C('认识时间','时分换算','1时等于多少分？',['100分','60分','30分'],1,
+    '钟面走一圈是60分钟，所以1时=60分。','1时等于多少分'));
+  // 钟面连线
+  {const times=shuffle([[3,0],[7,30],[9,15],[6,45]]).slice(0,4);
+   const left=times.map(t=>clockSVG(t[0],t[1],88));
+   const labels=times.map(t=>`${t[0]}:${String(t[1]).padStart(2,'0')}`);
+   const right=shuffle(labels);
+   const correct=labels.map(l=>right.indexOf(l));
+   out.push(M('认识时间','钟面连线','把钟面和时刻连起来（先点钟面，再点时刻）',
+     left,right,correct,'看分针指向判断分钟。','把钟面和时刻连起来'));}
+  return out;
+}
+
+/* 组一轮题：所有必考点各1题 + 常规随机补到 ~34 题 */
+function buildDeck(){
+  UID=0;
+  let must=[].concat(genU1(),genU2(),genU3(),genU4(),genU5()); // 约25-26题(必考)
+  // 常规补充：再随机生成各单元几题，凑到目标
+  const target=34;
+  let extra=[];
+  const gens=[genU1,genU2,genU3,genU4,genU5];
+  while(must.length+extra.length<target){
+    const batch=pick(gens)();
+    extra.push(pick(batch)); // 取一题
+  }
+  let deck=shuffle(must.concat(extra));
+  deck.forEach(q=>{q.streak=0;q.lapsed=false;q.firstTry=true;});
+  return deck;
+}
+
+/* ========== 高级题：综合应用题（跨单元两步计算） ========== */
+const pad2=n=>String(n).padStart(2,'0');
+const ADV_GENS=[
+  // 春游租车：加法 + 有余数除法（进一法）
+  function(){const a=rnd(18,27),b=rnd(18,27),per=pick([6,8]),sum=a+b,fl=Math.floor(sum/per),rm=sum%per,cars=fl+(rm>0?1:0);
+    const q=F('⭐ 综合应用','春游租车',
+      `二(1)班${a}人，二(2)班${b}人一起去春游。每辆车坐${per}人，至少要租几辆车？`,'',
+      [['一共',sum],['车数',cars]],
+      `先求总人数 ${a}+${b}=${sum}人；再算 ${sum}÷${per}=${fl}……${rm}，剩下的人也要一辆车，所以要 ${cars} 辆。`,
+      `两个班一共${sum}人，每辆车坐${per}人，至少租几辆车`);
+    q.adv=true;q.detail={title:'春游租车：先合并，再分组（进一法）',
+      know:['加法求总数','有余数的除法','进一法——只要有剩余，就要多备一份'],
+      steps:[`求一共多少人：${a}+${b}=${sum}（人）`,
+        `求要几辆车：${sum}÷${per}=${fl}……${rm}`,
+        rm>0?`还剩 ${rm} 人也得坐一辆车，用进一法：${fl}+1=${cars}（辆）`:`正好坐满，${fl} 辆即可`],
+      alt:rm>0?`⚡ 速记：除不尽（有余数）商就加 1，这就是“进一法”。`:`⚡ 正好整除时不用加 1。`};
+    return q;},
+  // 购物找钱：加法 + 减法（求还剩）
+  function(){const p1=rnd(28,55),p2=rnd(22,44),total=p1+p2,money=pick([100,150]);
+    const q=F('⭐ 综合应用','购物找钱',
+      `妈妈带了${money}元，买一个${p1}元的书包和一个${p2}元的水壶，一共花了多少钱？还剩多少钱？`,'',
+      [['一共花',total],['还剩',money-total]],
+      `${p1}+${p2}=${total}元；${money}-${total}=${money-total}元。`,
+      `带${money}元，买${p1}元书包和${p2}元水壶，一共花多少，还剩多少`);
+    q.adv=true;q.detail={title:'购物找钱：先求花费，再求找零',
+      know:['连加求总价','减法求剩余（可能要退位）'],
+      steps:[`先求一共花了多少：${p1}+${p2}=${total}（元）`,
+        `再用带的钱减花费：${money}−${total}=${money-total}（元）`],
+      alt:`⚡ 另一种算法：用 ${money} 连续减——${money}−${p1}=${money-p1}，再 −${p2}=${money-total}（元），结果一样。`};
+    return q;},
+  // 购物够不够：判断（加法比较）
+  function(){let p1=rnd(35,60),p2=rnd(35,60),money=pick([100,120]);let total=p1+p2;
+    while(total===money){p2=rnd(35,60);total=p1+p2;}const ok=total<money;
+    const q=C('⭐ 综合应用','够不够',
+      `带${money}元，想买${p1}元的故事书和${p2}元的文具盒，钱够吗？`,
+      ['够','不够','刚好用完'],ok?0:1,
+      `${p1}+${p2}=${total}元，${total}${ok?'<':'>'}${money}元，所以${ok?'够':'不够'}。`,
+      `带${money}元，买${p1}元和${p2}元的东西，钱够吗`);
+    q.adv=true;q.detail={title:'够不够：先算总价，再比大小',
+      know:['加法求总价','万以内数比较大小'],
+      steps:[`算出一共要花多少钱：${p1}+${p2}=${total}（元）`,
+        `和带的钱比一比：${total} ${ok?'<':'>'} ${money}，所以钱${ok?'够':'不够'}`],
+      alt:`⚡ 速判：把价格看成整十数估一估（${Math.round(p1/10)*10}+${Math.round(p2/10)*10}≈${Math.round(p1/10)*10+Math.round(p2/10)*10}），就能很快判断够不够。`};
+    return q;},
+  // 倍 + 求总数：乘法 + 加法
+  function(){const a=rnd(15,40),t=rnd(2,4),other=a*t;
+    const q=F('⭐ 综合应用','倍数应用',
+      `图书角有科技书${a}本，故事书的本数是科技书的${t}倍。两种书一共有多少本？`,'',
+      [['故事书',other],['一共',a+other]],
+      `故事书 ${a}×${t}=${other}本；一共 ${a}+${other}=${a+other}本。`,
+      `科技书${a}本，故事书是它的${t}倍，两种书一共多少本`);
+    q.adv=true;q.detail={title:'倍数应用：先求几倍量，再求和',
+      know:['求一个数的几倍——用乘法','加法求总和','“倍”是关系，不是单位'],
+      steps:[`故事书是科技书的 ${t} 倍：${a}×${t}=${other}（本）`,
+        `两种书相加：${a}+${other}=${a+other}（本）`],
+      alt:`⚡ 快速法：一共是“1 倍 + ${t} 倍 = ${t+1} 倍”，直接 ${a}×${t+1}=${a*(t+1)}（本），一步算出。`};
+    return q;},
+  // 份总关系 + 剩余：乘法 + 加法
+  function(){const per=pick([5,6,8]),boxes=rnd(4,7),extra=rnd(1,per-1),tot=per*boxes+extra;
+    const q=F('⭐ 综合应用','份总关系',
+      `每盒装${per}个月饼，装满了${boxes}盒，还剩${extra}个。一共有多少个月饼？`,'',
+      [['一共',tot]],
+      `${per}×${boxes}=${per*boxes}个，再加剩下的 ${extra} 个：${per*boxes}+${extra}=${tot}个。`,
+      `每盒${per}个，装满${boxes}盒还剩${extra}个，一共多少个`);
+    q.adv=true;q.detail={title:'份总关系：每份×份数 ＋ 剩余',
+      know:['乘法求“几份一共多少”','加上剩余的部分'],
+      steps:[`先求装满的：${per}×${boxes}=${per*boxes}（个）`,
+        `再加上剩下的：${per*boxes}+${extra}=${tot}（个）`],
+      alt:`⚡ 口诀：总数 = 每份数 × 份数 + 剩余。先乘后加，别忘了加剩下的。`};
+    return q;},
+  // 平均分有余数：除法
+  function(){const ppl=pick([6,7,8]);let total=rnd(30,60);while(total%ppl===0)total=rnd(30,60);
+    const q0=Math.floor(total/ppl),r=total%ppl;
+    const q=F('⭐ 综合应用','平均分',
+      `${total}颗糖，平均分给${ppl}个小朋友，每人分几颗？还剩几颗？`,'',
+      [['每人',q0],['剩下',r]],
+      `${total}÷${ppl}=${q0}……${r}，每人${q0}颗，剩${r}颗。`,
+      `${total}颗糖平均分给${ppl}人，每人几颗还剩几颗`);
+    q.adv=true;q.detail={title:'平均分：有余数的除法',
+      know:['有余数的除法','商是每人分到的，余数是剩下的','余数一定比除数小'],
+      steps:[`列式计算：${total}÷${ppl}=${q0}……${r}`,
+        `每人分到“商”：${q0} 颗；剩下的就是“余数”：${r} 颗`],
+      alt:`⚡ 检验：${q0}×${ppl}+${r}=${total}，能对上就说明算对了。`};
+    return q;},
+  // 时间应用：经过时间（加法 + 满60进位）
+  function(){const sh=rnd(7,9),sm=pick([10,20,25]),d=pick([30,40,45]);
+    const t=sm+d,eh=sh+Math.floor(t/60),em=t%60;
+    const q=F('⭐ 综合应用','时间应用',
+      `小明${sh}:${pad2(sm)}开始写作业，写了${d}分钟才完成，他几时几分写完？`,clockSVG(sh,sm),
+      [['时',eh],['分',em]],
+      `${sm}+${d}=${t}分，${t>=60?'满60分要进1时，':''}写完是 ${eh} 时 ${em} 分。`,
+      `${sh}时${sm}分开始，写了${d}分钟，几时几分写完`);
+    q.adv=true;q.detail={title:'经过时间：分钟相加，满 60 进 1 时',
+      know:['时间的加法','1 时 = 60 分','满 60 分要向“时”进 1'],
+      steps:[`分针走过的分钟相加：${sm}+${d}=${t}（分）`,
+        t>=60?`${t} 分超过 60，满 60 进 1 时：${t}分 = 1时${em}分，${sh}时+1时=${eh}时${em}分`:`${t} 分没满 60，时不变，是 ${eh} 时 ${em} 分`],
+      alt:`⚡ 看钟面：分针从 ${sm} 分再走 ${d} 分钟，转过一整圈（60 分）就进一个钟头。`};
+    return q;},
+  // 求一倍量 + 总数：除法 + 加法
+  function(){const small=rnd(8,18),t=rnd(2,4),big=small*t;
+    const q=F('⭐ 综合应用','倍数应用',
+      `哥哥有${big}元，是弟弟的${t}倍。弟弟有多少元？两人一共有多少元？`,'',
+      [['弟弟',small],['一共',big+small]],
+      `弟弟 ${big}÷${t}=${small}元；一共 ${big}+${small}=${big+small}元。`,
+      `哥哥${big}元是弟弟的${t}倍，弟弟多少元，两人一共多少元`);
+    q.adv=true;q.detail={title:'倍数应用：先求 1 倍量，再求和',
+      know:['已知“几倍量”求“1 倍量”——用除法','加法求总和','认清谁是 1 倍量（这里弟弟是 1 倍量）'],
+      steps:[`哥哥是弟弟的 ${t} 倍，弟弟是 1 倍量：${big}÷${t}=${small}（元）`,
+        `两人相加：${big}+${small}=${big+small}（元）`],
+      alt:`⚡ 快速法：两人一共是“${t} 倍 + 1 倍 = ${t+1} 倍”，即弟弟的钱×${t+1}：${small}×${t+1}=${small*(t+1)}（元）。`};
+    return q;},
+];
+function buildAdvDeck(n){
+  const gens=shuffle(ADV_GENS);
+  const chosen=gens.slice(0,Math.min(n,gens.length));
+  while(chosen.length<n)chosen.push(pick(ADV_GENS));
+  let deck=shuffle(chosen.map(g=>g()));
+  deck.forEach(q=>{q.streak=0;q.lapsed=false;q.firstTry=true;});
+  return deck;
+}
+
+/* ============ 游戏状态 ============ */
+let S=null; // {queue, total, mastered, stars, firstWrong, lapses, startMs}
+const SAVE_KEY='math2b_review_v1';
+
+function newGame(){
+  const deck=buildDeck();
+  S={phase:'basic',queue:deck,total:deck.length,mastered:0,stars:0,lapses:0,firstWrong:0,
+     askedAll:0,startMs:Date.now()};
+  save();
+  showGame();
+}
+function save(){
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}
+}
+function load(){
+  try{const raw=localStorage.getItem(SAVE_KEY);if(!raw)return null;return JSON.parse(raw);}catch(e){return null;}
+}
+function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+
+/* ============ 视图切换 ============ */
+function showGame(){$('#home').classList.add('hidden');$('#done').classList.add('hidden');$('#game').classList.remove('hidden');renderCurrent();}
+function showStageClear(){
+  hideKeypad();
+  $('#cardInner').innerHTML=`<div class="hero">
+    <div class="emoji">🎖️</div>
+    <h1 style="font-size:25px;margin:6px 0;">基础闯关全部通关！</h1>
+    <p>太厉害了！下面是<b>高级综合挑战</b>——把好几个知识点合在一起的应用题。<br>闯过它，你就是真正的数学小高手！</p>
+    <div class="actions"><button class="btn" id="advBtn">开始高级挑战 🚀</button></div>
+  </div>`;
+  $('#advBtn').onclick=()=>startAdvanced();
+  $('#speakBtn').style.display='none';
+  schedFit();
+}
+function startAdvanced(){
+  const adv=buildAdvDeck(6); // 从题库随机抽取 6 道，每次不同
+  S.phase='advanced';S.queue=adv;S.total=adv.length;S.mastered=0;
+  save();renderCurrent();
+}
+function showDetail(q){
+  hideKeypad();dingOK();
+  const d=q.detail;
+  let h=`<div class="detail">
+    <div class="dhead">✅ 答对啦！这类题这样想 👇</div>
+    <h2>${d.title}</h2>`;
+  if(d.know&&d.know.length)
+    h+=`<div class="dsec"><b>📚 用到的知识点</b><ul>${d.know.map(k=>`<li>${k}</li>`).join('')}</ul></div>`;
+  h+=`<div class="dsec"><b>📝 解题步骤</b><ol>${d.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>`;
+  if(d.alt)
+    h+=`<div class="dsec alt"><b>⚡ 速算 / 另一种解法</b><p>${d.alt}</p></div>`;
+  h+=`<div class="actions"><button class="btn" id="contBtn">明白啦，下一题 →</button></div></div>`;
+  $('#cardInner').innerHTML=h;
+  $('#contBtn').onclick=()=>renderCurrent();
+  $('#speakBtn').style.display='none';
+  schedFit();
+}
+
+function showDone(){
+  hideKeypad();
+  $('#game').classList.add('hidden');$('#done').classList.remove('hidden');
+  const sec=Math.round((Date.now()-S.startMs)/1000);
+  $('#dTime').textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
+  const rate=S.askedAll?Math.round((S.askedAll-S.firstWrong)/S.askedAll*100):100;
+  $('#dRate').textContent=rate+'%';
+  $('#dLapse').textContent=S.lapses;
+  $('#dWord').textContent= S.lapses===0?'太厉害了，基础和高级一次全对！':'基础和高级挑战全部攻克，你是数学小高手！';
+  clearSave();
+}
+
+/* 进度条 */
+function updateBar(){
+  $('#starN').textContent=S.stars;
+  $('#progTxt').textContent=(S.phase==='advanced'?'高级 ':'')+S.mastered+'/'+S.total;
+  $('#progBar').style.width=(S.total?S.mastered/S.total*100:0)+'%';
+}
+
+/* ============ 渲染当前题 ============ */
+let UI={}; // 临时交互状态
+function renderCurrent(){
+  updateBar();
+  if(S.queue.length===0){
+    if(S.phase==='basic'){showStageClear();return;}
+    showDone();return;
+  }
+  const q=S.queue[0];
+  UI={q,selected:null,blankVals:{},activeBlank:0,matchPick:null,matchPairs:{},answered:false};
+  const card=$('#cardInner');
+  let html=`<span class="unittag">${q.unit}</span>`;
+  if(q.visual)html+=`<div class="visual">${q.visual}</div>`;
+  html+=`<div class="qtext">${q.q}</div>`;
+  if(q.type==='choice')html+=renderChoice(q);
+  else if(q.type==='fill')html+=renderFill(q);
+  else if(q.type==='match')html+=renderMatch(q);
+  html+=`<div class="actions" id="actionZone"></div><div id="fbZone"></div>`;
+  card.innerHTML=html;
+  bind(q);
+  schedFit();
+  // 默认不自动播报；读数题隐藏喇叭（朗读会暴露读法）
+  $('#speakBtn').style.display=q.noSpeak?'none':'';
+}
+/* 自适应：内容超过卡片可用高度时，整体等比缩小压进一屏，避免截断/滚动 */
+function fitToScreen(){
+  const inner=$('#cardInner'),box=$('#qcard');
+  if(!inner||!box)return;
+  inner.style.transform='none';
+  const avail=box.clientHeight||0, need=inner.scrollHeight||0;
+  if(avail>0&&need>avail+1){
+    inner.style.transform='scale('+Math.max(0.55,avail/need).toFixed(3)+')';
+  }
+}
+function schedFit(){
+  if(typeof requestAnimationFrame!=='undefined')requestAnimationFrame(()=>requestAnimationFrame(fitToScreen));
+  else setTimeout(fitToScreen,0);
+}
+
+function renderChoice(q){
+  const grid=q.options.every(o=>String(o).length<=2);
+  let h=`<div class="options ${grid?'opts-grid':''}">`;
+  q.options.forEach((o,i)=>{h+=`<button class="opt" data-i="${i}">${o}</button>`;});
+  h+=`</div>`;return h;
+}
+function renderFill(q){
+  let h=`<div class="qsub">点方框选择，用下方键盘填写答案</div><div class="blanks">`;
+  q.blanks.forEach((b,i)=>{
+    h+=`<div class="blank ${i===0?'active':''}" data-bi="${i}"><label>${b.label}</label><div class="box"></div></div>`;
+  });
+  h+=`</div>`;return h;
+}
+function mountKeypad(q){
+  const grid=$('#keypadGrid');
+  let h='';
+  ['1','2','3','4','5','6','7','8','9','⌫','0','✓'].forEach(k=>{
+    h+=`<button class="key ${k==='✓'?'act':''}" data-k="${k}">${k}</button>`;
+  });
+  grid.innerHTML=h;
+  grid.querySelectorAll('.key').forEach(k=>{k.onclick=()=>{if(UI.answered)return;pressKey(q,k.dataset.k);};});
+  showKeypad();
+}
+function showKeypad(){
+  const host=$('#keypadHost');host.classList.remove('hidden');document.body.classList.add('kp-open');
+  const g=$('#game');if(g)g.style.paddingBottom=((host.offsetHeight||240))+'px'; // 按真实键盘高度留底
+  schedFit();
+}
+function hideKeypad(){
+  $('#keypadHost').classList.add('hidden');document.body.classList.remove('kp-open');
+  const g=$('#game');if(g)g.style.paddingBottom='';
+  schedFit();
+}
+function renderMatch(q){
+  let h=`<div class="match"><div class="mcol" data-side="L">`;
+  q.left.forEach((l,i)=>{h+=`<div class="mitem" data-li="${i}">${l}</div>`;});
+  h+=`</div><div class="mcol" data-side="R">`;
+  q.right.forEach((r,i)=>{h+=`<div class="mitem" data-ri="${i}">${r}</div>`;});
+  h+=`</div>`;return h;
+}
+
+/* 绑定交互 */
+function bind(q){
+  const az=$('#actionZone');
+  if(q.type==='choice'){
+    $('#qcard').querySelectorAll('.opt').forEach(btn=>{
+      btn.onclick=()=>{
+        if(UI.answered)return;
+        $('#qcard').querySelectorAll('.opt').forEach(b=>b.classList.remove('sel'));
+        btn.classList.add('sel');UI.selected=+btn.dataset.i;
+        tone(520,.05);
+      };
+    });
+    az.innerHTML=`<button class="btn" id="ckBtn">确认</button>`;
+    $('#ckBtn').onclick=()=>checkChoice(q);
+    hideKeypad();
+  }
+  else if(q.type==='fill'){
+    $('#qcard').querySelectorAll('.blank').forEach(bl=>{
+      bl.onclick=()=>setActiveBlank(+bl.dataset.bi);
+    });
+    mountKeypad(q);
+  }
+  else if(q.type==='match'){
+    $('#qcard').querySelectorAll('[data-li]').forEach(it=>{
+      it.onclick=()=>{if(UI.answered)return;pickLeft(+it.dataset.li);};
+    });
+    $('#qcard').querySelectorAll('[data-ri]').forEach(it=>{
+      it.onclick=()=>{if(UI.answered)return;pickRight(+it.dataset.ri);};
+    });
+    az.innerHTML=`<button class="btn" id="ckBtn" disabled>确认</button>`;
+    $('#ckBtn').onclick=()=>checkMatch(q);
+    hideKeypad();
+  }
+}
+
+/* 填空交互 */
+function setActiveBlank(i){
+  UI.activeBlank=i;
+  $('#qcard').querySelectorAll('.blank').forEach(b=>b.classList.toggle('active',+b.dataset.bi===i));
+  const el=$('#qcard').querySelector(`.blank[data-bi="${i}"]`);
+  if(el&&el.scrollIntoView)el.scrollIntoView({block:'center',behavior:'smooth'});
+}
+function pressKey(q,k){
+  const i=UI.activeBlank;
+  let v=UI.blankVals[i]||'';
+  if(k==='⌫'){v=v.slice(0,-1);}
+  else if(k==='✓'){checkFill(q);return;}
+  else{if(v.length<5)v+=k;}
+  UI.blankVals[i]=v;
+  const box=$('#qcard').querySelector(`.blank[data-bi="${i}"] .box`);
+  box.textContent=v;
+  tone(600,.04);
+  // 自动跳到下一个空
+  if(k!=='⌫'&&v.length>=1&&i<q.blanks.length-1&&!(UI.blankVals[i+1])){
+    // 不强制跳，避免误填；保持当前
+  }
+}
+
+/* 连线交互 */
+function pickLeft(i){
+  UI.matchPick=i;
+  $('#qcard').querySelectorAll('[data-li]').forEach(it=>it.classList.toggle('pick',+it.dataset.li===i));
+  tone(520,.05);
+}
+function pickRight(ri){
+  if(UI.matchPick===null)return;
+  const li=UI.matchPick;
+  UI.matchPairs[li]=ri;
+  const color=COLORS[li%COLORS.length];
+  // 标记
+  const lEl=$('#qcard').querySelector(`[data-li="${li}"]`);
+  const rEl=$('#qcard').querySelector(`[data-ri="${ri}"]`);
+  lEl.classList.remove('pick');
+  lEl.style.borderColor=color;rEl.style.borderColor=color;
+  // 移除该 right 之前的其他绑定标记由颜色覆盖即可
+  setBadge(lEl,li+1,color);setBadge(rEl,li+1,color);
+  UI.matchPick=null;
+  tone(680,.05);
+  if(Object.keys(UI.matchPairs).length===UI.q.left.length){$('#ckBtn').disabled=false;}
+}
+function setBadge(el,n,color){
+  let b=el.querySelector('.badge');
+  if(!b){b=document.createElement('span');b.className='badge';el.appendChild(b);}
+  b.textContent=n;b.style.background=color;
+}
+
+/* ============ 判分 ============ */
+function checkChoice(q){
+  if(UI.selected===null){flash('先选一个答案哦');return;}
+  const ok=UI.selected===q.ai;
+  $('#qcard').querySelectorAll('.opt').forEach((b,i)=>{
+    b.classList.add('cmp');
+    if(i===q.ai)b.classList.add('right');
+    if(i===UI.selected&&!ok)b.classList.add('wrong');
+  });
+  finish(q,ok);
+}
+function checkFill(q){
+  // 未填满
+  for(let i=0;i<q.blanks.length;i++){if(!UI.blankVals[i]){setActiveBlank(i);flash('还有空没填哦');return;}}
+  const ok=q.blanks.every((b,i)=>String(+UI.blankVals[i])===String(+b.ans));
+  finish(q,ok);
+}
+function checkMatch(q){
+  const ok=q.left.every((_,i)=>UI.matchPairs[i]===q.correct[i]);
+  finish(q,ok);
+}
+function flash(msg){
+  let z=$('#fbZone');z.innerHTML=`<div class="fb no">${msg}</div>`;
+  setTimeout(()=>{if($('#fbZone'))$('#fbZone').innerHTML='';},1200);
+}
+
+function finish(q,ok){
+  if(UI.answered)return;UI.answered=true;
+  hideKeypad();
+  // 统计首答（全局累计，跨基础/高级阶段）
+  if(q.firstTry){q.firstTry=false;S.askedAll++;if(!ok)S.firstWrong++;}
+  const az=$('#actionZone');az.innerHTML='';
+  const fb=$('#fbZone');
+  if(ok){
+    dingOK();popEmoji(pick(['🎉','🌟','👍','😃','💯']));
+    S.stars++;
+    // Anki：掌握判定
+    let mastered=false;
+    if(q.lapsed){q.streak++; if(q.streak>=2)mastered=true; }
+    else{mastered=true;}
+    S.queue.shift();
+    if(mastered){S.mastered++;}
+    else{reinsert(q);}
+    updateBar();save();
+    if(q.adv&&q.detail){
+      // 高级题：答对后展示详细解法，确认后再继续
+      showDetail(q);
+    }else{
+      fb.innerHTML=`<div class="fb ok">✅ 答对啦！${q.lapsed&&!mastered?'再答对一次就掌握咯~':''}</div>`;
+      setTimeout(()=>renderCurrent(),900);
+    }
+  }else{
+    buzzNo();popEmoji('💪');
+    if(!q.lapsed){q.lapsed=true;S.lapses++;}
+    q.streak=0;
+    let ansTxt=answerText(q);
+    S.queue.shift();reinsert(q);
+    save();
+    fb.innerHTML=`<div class="fb no"><div class="ans">正确答案：${ansTxt}</div>
+      <div class="tip">💡 ${q.explain}</div>
+      <div class="again">这道题待会儿还会再考你，记住它哦！</div></div>`;
+    az.innerHTML=`<button class="btn" id="nextBtn">我记住啦，继续 →</button>`;
+    $('#nextBtn').onclick=()=>renderCurrent();
+  }
+}
+function answerText(q){
+  if(q.type==='choice')return q.options[q.ai];
+  if(q.type==='fill')return q.blanks.map(b=>`${b.label}=${b.ans}`).join('，');
+  if(q.type==='match')return q.left.map((l,i)=>`${l.length>20?'第'+(i+1)+'个':l}→${q.right[q.correct[i]]}`).join('；');
+}
+function reinsert(q){
+  const gap=Math.min(S.queue.length,rnd(3,5));
+  S.queue.splice(gap,0,q);
+}
+
+/* ============ 入口 ============ */
+$('#startBtn').onclick=()=>{newGame();};
+$('#againBtn').onclick=()=>{newGame();};
+$('#continueBtn').onclick=()=>{S=load();if(S&&S.queue&&S.queue.length){showGame();}else{newGame();}};
+$('#speakBtn').onclick=()=>{if(UI.q&&!UI.q.noSpeak)speak(UI.q.speak);};
+// 预热语音列表，提升首次点击播报成功率
+try{window.speechSynthesis&&window.speechSynthesis.getVoices&&window.speechSynthesis.getVoices();}catch(e){}
+
+// 屏幕尺寸/方向变化时重新自适应
+if(typeof window!=='undefined'&&window.addEventListener){
+  window.addEventListener('resize',fitToScreen);
+  window.addEventListener('orientationchange',()=>setTimeout(fitToScreen,200));
+}
+
+// 检测存档
+(function(){
+  const saved=load();
+  if(saved&&saved.queue&&saved.queue.length&&saved.mastered<saved.total){
+    $('#continueBtn').classList.remove('hidden');
+  }
+})();
+</script>
+</body>
+</html>
