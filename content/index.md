@@ -8,7 +8,7 @@ tags:
 Hello!
 # 玩中学
 
-[→ 玩中学游戏库](./%E7%8E%A9%E4%B8%AD%E5%AD%A6/index.md)
+[→ 玩中学游戏库](./%E7%8E%A9%E4%B8%AD%E5%AD%A6/%E6%B8%B8%E6%88%8F%E5%BA%93.md)
 
 # 学习方法
 
