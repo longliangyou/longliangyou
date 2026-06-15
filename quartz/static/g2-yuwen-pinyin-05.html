@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>看拼音写词语</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+#app { width: 100%; max-width: 500px; }
+
+.card {
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+}
+
+/* ---- Buttons ---- */
+.btn {
+  display: block; width: 100%; padding: 16px 12px;
+  border: none; border-radius: 14px;
+  font-size: 18px; font-weight: bold;
+  cursor: pointer; margin-bottom: 12px;
+  transition: transform 0.1s, box-shadow 0.1s;
+  font-family: inherit;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  color: white; box-shadow: 0 4px 15px rgba(245,87,108,0.4);
+}
+.btn-blue {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  color: white; box-shadow: 0 4px 15px rgba(79,172,254,0.4);
+}
+.btn-green {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  color: white; box-shadow: 0 4px 15px rgba(67,233,123,0.4);
+}
+.btn-orange {
+  background: linear-gradient(135deg, #fa709a, #fee140);
+  color: white; box-shadow: 0 4px 15px rgba(250,112,154,0.35);
+}
+.btn-ghost {
+  background: #f2f2f2; color: #777;
+  font-size: 15px; padding: 12px;
+}
+.btn-back {
+  background: none; border: none; font-size: 22px;
+  cursor: pointer; padding: 0 10px 0 0; line-height: 1;
+}
+
+/* ---- Progress bar ---- */
+.bar-wrap { background: #eee; border-radius: 99px; height: 10px; margin-bottom: 6px; }
+.bar-fill { height: 10px; border-radius: 99px; transition: width 0.5s ease; }
+.bar-green { background: linear-gradient(90deg, #43e97b, #38f9d7); }
+.bar-purple { background: linear-gradient(90deg, #667eea, #764ba2); }
+
+/* ---- Home ---- */
+.home-title { font-size: 20px; font-weight: bold; color: #333; text-align: center; margin-bottom: 4px; }
+.home-sub { font-size: 13px; color: #999; text-align: center; margin-bottom: 18px; }
+.prog-label { font-size: 12px; color: #888; text-align: right; margin-bottom: 20px; }
+
+.word-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 18px;
+}
+.wchip {
+  background: #f7f7f7; border-radius: 10px; padding: 6px 3px;
+  text-align: center; cursor: default;
+}
+.wchip.mastered { background: #eafaf1; }
+.wchip .wc-word { font-size: 13px; font-weight: bold; color: #333; }
+.wchip.mastered .wc-word { color: #27ae60; }
+.wchip .wc-mark { font-size: 10px; }
+
+/* ---- Screen header ---- */
+.screen-hdr {
+  display: flex; align-items: center; margin-bottom: 16px;
+}
+.screen-hdr .hdr-title { font-size: 17px; font-weight: bold; color: #333; flex: 1; }
+.screen-hdr .hdr-info { font-size: 13px; color: #aaa; }
+
+/* ---- Quiz ---- */
+.quiz-pinyin-card {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 20px; padding: 32px 20px;
+  text-align: center; color: white; margin-bottom: 20px;
+}
+.qpc-label { font-size: 12px; opacity: 0.8; margin-bottom: 8px; }
+.qpc-pinyin { font-size: 30px; font-weight: bold; letter-spacing: 3px; line-height: 1.3; }
+.qpc-badge {
+  display: inline-block; margin-top: 10px;
+  background: rgba(255,255,255,0.25); border-radius: 20px;
+  padding: 2px 12px; font-size: 12px;
+}
+
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.opt-btn {
+  padding: 18px 10px; border: 3px solid #e8e8e8; border-radius: 14px;
+  background: white; font-size: 22px; font-weight: bold;
+  cursor: pointer; transition: all 0.15s; color: #333;
+  font-family: inherit;
+}
+.opt-btn:not([disabled]):hover { border-color: #764ba2; background: #f9f0ff; }
+.opt-btn.correct  { border-color: #27ae60 !important; background: #eafaf1 !important; color: #27ae60 !important; }
+.opt-btn.wrong    { border-color: #e74c3c !important; background: #ffeaea !important; color: #e74c3c !important; }
+.opt-btn.revealed { border-color: #27ae60 !important; background: #eafaf1 !important; color: #27ae60 !important; }
+
+.reinforce-banner {
+  background: linear-gradient(135deg, #fa709a, #fee140);
+  border-radius: 14px; padding: 12px 16px; margin-bottom: 14px;
+  color: white; text-align: center;
+}
+.reinforce-banner b { font-size: 15px; display: block; }
+.reinforce-banner span { font-size: 12px; opacity: 0.9; }
+
+/* ---- Match ---- */
+.match-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.match-col-lbl { font-size: 12px; color: #aaa; text-align: center; margin-bottom: 8px; }
+
+.mp-card {
+  border: 2.5px solid #c8b4e0; border-radius: 12px;
+  padding: 11px 8px; text-align: center; font-size: 13px; line-height: 1.3;
+  cursor: pointer; transition: all 0.15s; margin-bottom: 8px;
+  background: #f9f4ff; min-height: 50px;
+  display: flex; align-items: center; justify-content: center;
+}
+.mw-card {
+  border: 2.5px solid #d8d8d8; border-radius: 12px;
+  padding: 11px 8px; text-align: center; font-size: 21px; font-weight: bold;
+  cursor: pointer; transition: all 0.15s; margin-bottom: 8px;
+  background: white; min-height: 50px;
+  display: flex; align-items: center; justify-content: center;
+}
+.mp-card.selected, .mw-card.selected {
+  border-color: #f5576c; background: #fff0f3; transform: scale(1.04);
+}
+.mp-card.matched, .mw-card.matched {
+  border-color: #27ae60 !important; background: #eafaf1 !important;
+  color: #27ae60; cursor: default; transform: none;
+}
+.mp-card.wrong-fx, .mw-card.wrong-fx {
+  animation: shake 0.45s ease; border-color: #e74c3c; background: #ffeaea;
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60% { transform: translateX(-7px); }
+  40%,80% { transform: translateX(7px); }
+}
+.batch-badge {
+  display: flex; gap: 6px; justify-content: center; margin-bottom: 14px;
+}
+.batch-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: #ddd;
+}
+.batch-dot.active { background: #764ba2; }
+.batch-dot.done   { background: #27ae60; }
+
+/* ---- Wrong book ---- */
+.wb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 4px; border-bottom: 1px solid #f2f2f2;
+}
+.wb-pinyin { font-size: 13px; color: #999; flex: 1; }
+.wb-word   { font-size: 21px; font-weight: bold; color: #333; }
+.wb-cnt    {
+  font-size: 12px; color: #e74c3c;
+  background: #ffeaea; padding: 2px 8px; border-radius: 20px;
+}
+
+/* ---- Complete ---- */
+.cpl-emoji { font-size: 60px; text-align: center; margin: 16px 0 8px; }
+.cpl-msg   { font-size: 22px; font-weight: bold; text-align: center; color: #333; margin-bottom: 4px; }
+.cpl-stars { font-size: 22px; text-align: center; margin-bottom: 18px; }
+.stats-row { display: flex; justify-content: space-around; background: #f7f7f7; border-radius: 14px; padding: 16px; margin-bottom: 18px; }
+.stat-val  { font-size: 28px; font-weight: bold; text-align: center; }
+.stat-lbl  { font-size: 12px; color: #aaa; text-align: center; }
+.stat-green { color: #27ae60; }
+.stat-red   { color: #e74c3c; }
+.stat-purple{ color: #764ba2; }
+
+@keyframes bounceIn {
+  0%  { transform: scale(0.4); opacity: 0; }
+  55% { transform: scale(1.06); }
+  75% { transform: scale(0.95); }
+  100%{ transform: scale(1);    opacity: 1; }
+}
+.bounce-in { animation: bounceIn 0.45s ease both; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ╔══════════════════════════════════════════════════════╗
+// ║  ★ 配置区域 — 每次换词语只需修改这里 ★              ║
+// ╚══════════════════════════════════════════════════════╝
+const CONFIG = {
+  title:      "第五次看拼音写词语",
+  storageKey: "pinyinGame_lesson5",   // 换词语时改此 key 避免旧数据干扰
+  words: [
+    // 识字三 "贝"的故事
+    { pinyin: "yàng zi",      word: "样子"  },
+    { pinyin: "qián bì",      word: "钱币"  },
+    { pinyin: "shēng huó",    word: "生活"  },
+    { pinyin: "yǒu guān",     word: "有关"  },
+    { pinyin: "jiǎ gǔ wén",   word: "甲骨文"},
+    { pinyin: "zuò pǐn",      word: "作品"  },
+    { pinyin: "yǔ qí",        word: "与其"  },
+    { pinyin: "qián cái",     word: "钱财"  },
+    { pinyin: "gù shi",       word: "故事"  },
+    // 识字四 中国美食
+    { pinyin: "kǎo yā",       word: "烤鸭"  },
+    { pinyin: "jī dàn",       word: "鸡蛋"  },
+    { pinyin: "yáng ròu",     word: "羊肉"  },
+    { pinyin: "shí wù",       word: "食物"  },
+    { pinyin: "dàn chǎo fàn", word: "蛋炒饭"},
+    { pinyin: "qié zi",       word: "茄子"  },
+    { pinyin: "xiǎo jī",      word: "小鸡"  },
+    { pinyin: "měi shí",      word: "美食"  },
+    { pinyin: "shuǐ zhǔ yú",  word: "水煮鱼"},
+  ]
+};
+// ══════════════════════════════════════════════════════
+
+// ---- Storage ----
+const SK = CONFIG.storageKey;
+function loadProg()  { try { return JSON.parse(localStorage.getItem(SK+'_prog')||'{}');  } catch { return {}; } }
+function saveProg(p) { localStorage.setItem(SK+'_prog', JSON.stringify(p)); }
+function loadWB()    { try { return JSON.parse(localStorage.getItem(SK+'_wb')||'[]');    } catch { return []; } }
+function saveWB(wb)  { localStorage.setItem(SK+'_wb', JSON.stringify(wb)); }
+
+function getStats(word) {
+  const p = loadProg();
+  return p[word] || { correct: 0, wrong: 0, mastered: false };
+}
+function recordAnswer(word, correct) {
+  const p = loadProg();
+  if (!p[word]) p[word] = { correct: 0, wrong: 0, mastered: false };
+  if (correct) { p[word].correct++; if (p[word].correct >= 3) p[word].mastered = true; }
+  else           p[word].wrong++;
+  saveProg(p);
+  return p[word];
+}
+function addWrongBook(item) {
+  const wb = loadWB();
+  const ex = wb.find(x => x.word === item.word);
+  const date = new Date().toLocaleDateString('zh-CN');
+  if (ex) { ex.count++; ex.lastDate = date; }
+  else     wb.push({ pinyin: item.pinyin, word: item.word, count: 1, lastDate: date });
+  saveWB(wb);
+}
+
+// ---- Audio (Web Audio API) ----
+let _actx = null;
+function actx() {
+  if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)();
+  return _actx;
+}
+function beep(freq, t0, dur, type='sine', vol=0.25) {
+  try {
+    const ctx = actx(), osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = type; osc.connect(g); g.connect(ctx.destination);
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + t0);
+    g.gain.setValueAtTime(vol, ctx.currentTime + t0);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t0 + dur);
+    osc.start(ctx.currentTime + t0);
+    osc.stop(ctx.currentTime + t0 + dur + 0.01);
+  } catch(_) {}
+}
+const sfx = {
+  correct:   () => { beep(523,0,.12); beep(659,.13,.22); },
+  wrong:     () => { beep(380,0,.1,'square',.2); beep(280,.12,.2,'square',.15); },
+  mastered:  () => { beep(523,0,.1); beep(659,.11,.1); beep(784,.22,.3); },
+  complete:  () => [523,659,784,1047].forEach((f,i) => beep(f,i*.13,.2)),
+};
+
+// ---- Utilities ----
+function shuffle(a) {
+  a = [...a];
+  for (let i=a.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function masteredCount() {
+  const p = loadProg();
+  return CONFIG.words.filter(w => p[w.word]?.mastered).length;
+}
+
+// ---- App State ----
+let S = { screen: 'home', quiz: null, match: null };
+
+// ═══════════════════════════════════════════
+// RENDER DISPATCHER
+// ═══════════════════════════════════════════
+function render() {
+  const app = document.getElementById('app');
+  const screens = { home: renderHome, quiz: renderQuiz, match: renderMatch, wrongBook: renderWrongBook, complete: renderComplete };
+  app.innerHTML = (screens[S.screen] || renderHome)();
+  attachHandlers();
+}
+
+// ═══════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════
+function renderHome() {
+  const mc = masteredCount(), total = CONFIG.words.length;
+  const pct = Math.round(mc / total * 100);
+  const p = loadProg();
+  const wb = loadWB();
+
+  const chips = CONFIG.words.map(w => {
+    const ok = p[w.word]?.mastered;
+    return `<div class="wchip${ok?' mastered':''}">
+      <div class="wc-word">${w.word}</div>
+      <div class="wc-mark">${ok?'⭐':'○'}</div>
+    </div>`;
+  }).join('');
+
+  const wrongBtn = wb.length > 0
+    ? `<button class="btn btn-orange" data-action="wrongBook">📕 错题本（${wb.length} 个词）</button>`
+    : `<button class="btn btn-ghost"  data-action="wrongBook">📕 错题本（暂无）</button>`;
+
+  return `<div class="card">
+    <div class="home-title">${CONFIG.title}</div>
+    <div class="home-sub">二年级拼音词语练习 🌟</div>
+    <div class="bar-wrap"><div class="bar-fill bar-green" style="width:${pct}%"></div></div>
+    <div class="prog-label">已掌握 ${mc} / ${total} 个词语</div>
+    <button class="btn btn-primary"  data-action="startQuiz">🎯 选择题模式</button>
+    <button class="btn btn-blue"     data-action="startMatch">🎮 配对游戏模式</button>
+    ${wrongBtn}
+    <div class="word-grid">${chips}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════════
+function startQuiz(words) {
+  const p = loadProg();
+  const notYet = words.filter(w => !p[w.word]?.mastered);
+  const done   = words.filter(w =>  p[w.word]?.mastered);
+  const queue  = [...shuffle(notYet), ...shuffle(done)];
+  S.quiz = {
+    queue, index: 0,
+    options: [], answered: false, selectedWrong: null,
+    wrongWords: [],
+    sessionCorrect: 0, sessionWrong: 0,
+    isReinforce: false,
+  };
+  S.screen = 'quiz';
+  buildOptions();
+  render();
+}
+
+function buildOptions() {
+  const q = S.quiz;
+  const cur = q.queue[q.index];
+  const pool = CONFIG.words.filter(w => w.word !== cur.word);
+  q.options = shuffle([cur, ...shuffle(pool).slice(0, 3)]);
+  q.answered = false;
+  q.selectedWrong = null;
+}
+
+function renderQuiz() {
+  const q = S.quiz;
+  if (!q || q.index >= q.queue.length) return renderComplete();
+  const cur   = q.queue[q.index];
+  const stats = getStats(cur.word);
+  const total = q.queue.length;
+  const pct   = Math.round(q.index / total * 100);
+
+  const optHtml = q.options.map(opt => {
+    let cls = '';
+    if (q.answered) {
+      if (opt.word === cur.word)        cls = opt.word === q.selectedWrong ? 'correct' : 'revealed';
+      else if (opt.word === q.selectedWrong) cls = 'wrong';
+    }
+    return `<button class="opt-btn ${cls}" data-action="quizAns" data-word="${opt.word}" ${q.answered?'disabled':''}>
+      ${opt.word}
+    </button>`;
+  }).join('');
+
+  const banner = q.isReinforce
+    ? `<div class="reinforce-banner"><b>💪 加强练习</b><span>再练一遍刚才答错的词语</span></div>` : '';
+
+  return `<div class="card">
+    ${banner}
+    <div class="screen-hdr">
+      <button class="btn-back" data-action="backHome">←</button>
+      <span class="hdr-title">${q.isReinforce ? '加强练习' : '选择题'}</span>
+      <span class="hdr-info">${q.index+1} / ${total}</span>
+    </div>
+    <div class="bar-wrap" style="margin-bottom:16px">
+      <div class="bar-fill bar-purple" style="width:${pct}%"></div>
+    </div>
+    <div class="quiz-pinyin-card">
+      <div class="qpc-label">看拼音，选出正确的词语</div>
+      <div class="qpc-pinyin">${cur.pinyin}</div>
+      ${stats.mastered ? '<div class="qpc-badge">⭐ 已掌握</div>' : ''}
+    </div>
+    <div class="options-grid">${optHtml}</div>
+  </div>`;
+}
+
+function onQuizAns(selectedWord) {
+  const q = S.quiz;
+  if (q.answered) return;
+  const cur = q.queue[q.index];
+  const ok  = selectedWord === cur.word;
+
+  q.answered     = true;
+  q.selectedWrong = ok ? null : selectedWord;
+
+  const statsBefore = getStats(cur.word);
+  const statsAfter  = recordAnswer(cur.word, ok);
+
+  if (ok) {
+    q.sessionCorrect++;
+    (!statsBefore.mastered && statsAfter.mastered) ? sfx.mastered() : sfx.correct();
+  } else {
+    q.sessionWrong++;
+    if (!q.wrongWords.find(w => w.word === cur.word)) q.wrongWords.push(cur);
+    addWrongBook(cur);
+    sfx.wrong();
+  }
+
+  render();
+
+  setTimeout(() => {
+    q.index++;
+    if (q.index >= q.queue.length) {
+      if (!q.isReinforce && q.wrongWords.length > 0) {
+        // start reinforcement round
+        q._wrongSnap = [...q.wrongWords];
+        q.queue      = shuffle([...q.wrongWords]);
+        q.index      = 0;
+        q.wrongWords = [];
+        q.isReinforce = true;
+        buildOptions();
+        render();
+      } else {
+        S.screen = 'complete';
+        sfx.complete();
+        render();
+      }
+    } else {
+      buildOptions();
+      render();
+    }
+  }, 1400);
+}
+
+// ═══════════════════════════════════════════
+// MATCH
+// ═══════════════════════════════════════════
+function startMatch() {
+  const shuffled = shuffle([...CONFIG.words]);
+  const batches  = [];
+  for (let i = 0; i < shuffled.length; i += 5) batches.push(shuffled.slice(i, i+5));
+
+  S.match = {
+    batches, batchIndex: 0,
+    selPinyin: null, selWord: null,
+    matched: new Set(),
+    wrongPair: null,
+    wrongWords: [],
+    sessionCorrect: 0, sessionWrong: 0,
+    rightCol: [],
+  };
+  initMatchBatch();
+  S.screen = 'match';
+  render();
+}
+
+function initMatchBatch() {
+  const m = S.match;
+  m.matched   = new Set();
+  m.selPinyin = null;
+  m.selWord   = null;
+  m.wrongPair = null;
+  m.rightCol  = shuffle([...m.batches[m.batchIndex]]);
+}
+
+function renderMatch() {
+  const m = S.match;
+  if (!m || m.batchIndex >= m.batches.length) return renderComplete();
+
+  const batch = m.batches[m.batchIndex];
+  const dots  = m.batches.map((_,i) => {
+    const cls = i < m.batchIndex ? 'done' : i === m.batchIndex ? 'active' : '';
+    return `<div class="batch-dot ${cls}"></div>`;
+  }).join('');
+
+  const leftHtml = batch.map(item => {
+    const isMatched  = m.matched.has(item.word);
+    const isSelected = m.selPinyin?.word === item.word;
+    const isWrong    = m.wrongPair?.pinyin === item.word;
+    let cls = 'mp-card';
+    if (isMatched)  cls += ' matched';
+    else if (isWrong)    cls += ' wrong-fx';
+    else if (isSelected) cls += ' selected';
+    return `<div class="${cls}" data-action="selPinyin" data-word="${item.word}"
+      ${isMatched?'':''}>${item.pinyin}</div>`;
+  }).join('');
+
+  const rightHtml = m.rightCol.map(item => {
+    const isMatched  = m.matched.has(item.word);
+    const isSelected = m.selWord?.word === item.word;
+    const isWrong    = m.wrongPair?.word === item.word;
+    let cls = 'mw-card';
+    if (isMatched)  cls += ' matched';
+    else if (isWrong)    cls += ' wrong-fx';
+    else if (isSelected) cls += ' selected';
+    return `<div class="${cls}" data-action="selWord" data-word="${item.word}">${item.word}</div>`;
+  }).join('');
+
+  return `<div class="card">
+    <div class="screen-hdr">
+      <button class="btn-back" data-action="backHome">←</button>
+      <span class="hdr-title">配对游戏</span>
+      <span class="hdr-info">第 ${m.batchIndex+1} / ${m.batches.length} 轮</span>
+    </div>
+    <div class="batch-badge">${dots}</div>
+    <div class="match-cols">
+      <div>
+        <div class="match-col-lbl">拼音</div>
+        ${leftHtml}
+      </div>
+      <div>
+        <div class="match-col-lbl">词语</div>
+        ${rightHtml}
+      </div>
+    </div>
+  </div>`;
+}
+
+function onSelPinyin(word) {
+  const m = S.match;
+  if (m.matched.has(word) || m.wrongPair) return;
+  m.selPinyin = m.selPinyin?.word === word ? null : { word };
+  tryMatchPair();
+  render();
+}
+function onSelWord(word) {
+  const m = S.match;
+  if (m.matched.has(word) || m.wrongPair) return;
+  m.selWord = m.selWord?.word === word ? null : { word };
+  tryMatchPair();
+  render();
+}
+
+function tryMatchPair() {
+  const m = S.match;
+  if (!m.selPinyin || !m.selWord) return;
+
+  const ok = m.selPinyin.word === m.selWord.word;
+
+  if (ok) {
+    m.matched.add(m.selWord.word);
+    m.sessionCorrect++;
+    recordAnswer(m.selWord.word, true);
+    sfx.correct();
+    m.selPinyin = null; m.selWord = null;
+    render();
+
+    if (m.matched.size >= m.batches[m.batchIndex].length) {
+      setTimeout(() => {
+        m.batchIndex++;
+        if (m.batchIndex >= m.batches.length) {
+          S.screen = 'complete';
+          sfx.complete();
+          render();
+        } else {
+          initMatchBatch();
+          render();
+        }
+      }, 700);
+    }
+  } else {
+    m.sessionWrong++;
+    const witem = CONFIG.words.find(w => w.word === m.selWord.word);
+    if (witem && !m.wrongWords.find(w => w.word === witem.word)) {
+      m.wrongWords.push(witem);
+      addWrongBook(witem);
+    }
+    recordAnswer(m.selWord.word, false);
+    sfx.wrong();
+    m.wrongPair = { pinyin: m.selPinyin.word, word: m.selWord.word };
+    m.selPinyin = null; m.selWord = null;
+    render();
+    setTimeout(() => {
+      m.wrongPair = null;
+      render();
+    }, 500);
+  }
+}
+
+// ═══════════════════════════════════════════
+// WRONG BOOK
+// ═══════════════════════════════════════════
+function renderWrongBook() {
+  const wb = loadWB();
+  const items = wb.length === 0
+    ? `<p style="text-align:center;color:#bbb;padding:24px">暂无错题，继续保持！🎉</p>`
+    : wb.map(it => `<div class="wb-item">
+        <span class="wb-pinyin">${it.pinyin}</span>
+        <span class="wb-word">${it.word}</span>
+        <span class="wb-cnt">错${it.count}次</span>
+      </div>`).join('');
+
+  return `<div class="card">
+    <div class="screen-hdr">
+      <button class="btn-back" data-action="backHome">←</button>
+      <span class="hdr-title">错题本</span>
+    </div>
+    ${items}
+    ${wb.length > 0 ? `
+      <button class="btn btn-orange" style="margin-top:16px" data-action="practiceWB">💪 专练错题</button>
+      <button class="btn btn-ghost" data-action="clearWB">清空错题本</button>
+    ` : ''}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// COMPLETE
+// ═══════════════════════════════════════════
+function renderComplete() {
+  let correct, wrong, wrongWords;
+  if (S.quiz && S.screen === 'complete') {
+    const q = S.quiz;
+    correct    = q.sessionCorrect;
+    wrong      = q.sessionWrong;
+    wrongWords = q._wrongSnap || q.wrongWords;
+  } else if (S.match && S.screen === 'complete') {
+    const m = S.match;
+    correct    = m.sessionCorrect;
+    wrong      = m.sessionWrong;
+    wrongWords = m.wrongWords;
+  } else {
+    correct = 0; wrong = 0; wrongWords = [];
+  }
+
+  const acc   = correct + wrong > 0 ? Math.round(correct / (correct + wrong) * 100) : 100;
+  const stars = acc >= 90 ? '⭐⭐⭐' : acc >= 70 ? '⭐⭐' : '⭐';
+  const emoji = acc >= 90 ? '🎉' : acc >= 70 ? '👏' : '💪';
+  const msg   = acc >= 90 ? '太棒了！' : acc >= 70 ? '不错哦！' : '继续加油！';
+
+  const wrongBtn = wrongWords.length > 0
+    ? `<button class="btn btn-orange" data-action="practiceWrongNow">💪 练习错题（${wrongWords.length}个）</button>`
+    : '';
+
+  return `<div class="card bounce-in">
+    <div class="cpl-emoji">${emoji}</div>
+    <div class="cpl-msg">${msg}</div>
+    <div class="cpl-stars">${stars}</div>
+    <div class="stats-row">
+      <div>
+        <div class="stat-val stat-green">${correct}</div>
+        <div class="stat-lbl">答对</div>
+      </div>
+      <div>
+        <div class="stat-val stat-red">${wrong}</div>
+        <div class="stat-lbl">答错</div>
+      </div>
+      <div>
+        <div class="stat-val stat-purple">${acc}%</div>
+        <div class="stat-lbl">正确率</div>
+      </div>
+    </div>
+    ${wrongBtn}
+    <button class="btn btn-primary" data-action="backHome">🏠 回到主页</button>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════
+function attachHandlers() {
+  document.querySelectorAll('[data-action]').forEach(el => {
+    el.addEventListener('click', e => {
+      const a = e.currentTarget.dataset.action;
+      const d = e.currentTarget.dataset;
+      switch (a) {
+        case 'backHome':     S.screen='home'; S.quiz=null; S.match=null; render(); break;
+        case 'startQuiz':    startQuiz(CONFIG.words); break;
+        case 'startMatch':   startMatch(); break;
+        case 'wrongBook':    S.screen='wrongBook'; render(); break;
+        case 'quizAns':      onQuizAns(d.word); break;
+        case 'selPinyin':    onSelPinyin(d.word); break;
+        case 'selWord':      onSelWord(d.word); break;
+        case 'clearWB':
+          if (confirm('确定清空全部错题记录？')) { saveWB([]); render(); }
+          break;
+        case 'practiceWB': {
+          const wb = loadWB();
+          const words = wb.map(it => CONFIG.words.find(w => w.word === it.word)).filter(Boolean);
+          if (words.length) startQuiz(words);
+          break;
+        }
+        case 'practiceWrongNow': {
+          const ww = S.quiz?._wrongSnap || S.quiz?.wrongWords || S.match?.wrongWords || [];
+          if (ww.length) startQuiz(ww);
+          else { S.screen='home'; render(); }
+          break;
+        }
+      }
+    });
+  });
+}
+
+// ---- Boot ----
+render();
+</script>
+</body>
+</html>
