@@ -714,5 +714,116 @@ function attachHandlers() {
 // ---- Boot ----
 render();
 </script>
+<script>
+(function () {
+  const doc = document;
+  const root = doc.documentElement;
+
+  function fullscreenElement() {
+    return doc.fullscreenElement ||
+      doc.webkitFullscreenElement ||
+      doc.mozFullScreenElement ||
+      doc.msFullscreenElement;
+  }
+
+  function requestFullscreen(el) {
+    const fn = el.requestFullscreen ||
+      el.webkitRequestFullscreen ||
+      el.mozRequestFullScreen ||
+      el.msRequestFullscreen;
+    return fn ? fn.call(el) : Promise.reject(new Error("Fullscreen API unavailable"));
+  }
+
+  function exitFullscreen() {
+    const fn = doc.exitFullscreen ||
+      doc.webkitExitFullscreen ||
+      doc.mozCancelFullScreen ||
+      doc.msExitFullscreen;
+    return fn ? fn.call(doc) : Promise.reject(new Error("Fullscreen API unavailable"));
+  }
+
+  function updateButton(button) {
+    const isFullscreen = Boolean(fullscreenElement());
+    button.textContent = isFullscreen ? "退出全屏" : "全屏";
+    button.setAttribute("aria-label", isFullscreen ? "退出全屏" : "进入全屏");
+    button.setAttribute("title", isFullscreen ? "退出全屏" : "全屏");
+  }
+
+  function injectStyle() {
+    const style = doc.createElement("style");
+    style.textContent = `
+      .iframe-fullscreen-toggle {
+        position: fixed;
+        top: calc(12px + env(safe-area-inset-top, 0px));
+        right: calc(12px + env(safe-area-inset-right, 0px));
+        z-index: 10000;
+        min-width: 64px;
+        height: 38px;
+        padding: 0 14px;
+        border: 1px solid rgba(255,255,255,.55);
+        border-radius: 999px;
+        background: rgba(20,24,32,.74);
+        color: #fff;
+        box-shadow: 0 8px 24px rgba(0,0,0,.18);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        cursor: pointer;
+        font: 700 14px/1 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+        white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .iframe-fullscreen-toggle:active { transform: scale(.96); }
+      body.has-iframe-fullscreen-toggle { padding-top: calc(62px + env(safe-area-inset-top, 0px)); }
+      .topbar .topbar-title { margin-right: auto; }
+      .topbar .iframe-fullscreen-toggle {
+        position: static;
+        flex: 0 0 auto;
+        margin-left: 8px;
+      }
+    `;
+    doc.head.appendChild(style);
+  }
+
+  function init() {
+    if (doc.getElementById("iframeFullscreenToggle")) return;
+
+    injectStyle();
+
+    const button = doc.createElement("button");
+    button.id = "iframeFullscreenToggle";
+    button.className = "iframe-fullscreen-toggle";
+    button.type = "button";
+    updateButton(button);
+
+    button.addEventListener("click", function () {
+      const action = fullscreenElement() ? exitFullscreen() : requestFullscreen(root);
+      Promise.resolve(action).catch(function () {
+        button.textContent = "不可用";
+        window.setTimeout(function () { updateButton(button); }, 1200);
+      });
+    });
+
+    const topbar = doc.querySelector(".topbar");
+    if (topbar) {
+      topbar.appendChild(button);
+    } else {
+      doc.body.classList.add("has-iframe-fullscreen-toggle");
+      doc.body.appendChild(button);
+    }
+
+    ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"]
+      .forEach(function (eventName) {
+        doc.addEventListener(eventName, function () { updateButton(button); });
+      });
+  }
+
+  if (doc.readyState === "loading") {
+    doc.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+
+</script>
 </body>
 </html>
