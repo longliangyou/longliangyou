@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三字经</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --text: #3d2b1f;
+    --py-color: #a08060;
+    --btn-bg: #e8ddd0;
+    --btn-text: #5d4037;
+    --btn-border: #c4b8a8;
+    --toast-bg: #3d2b1f;
+    --toast-text: #f5f0e8;
+    --para-gap: 3em;
+    --verse-gap: 0.6em;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Songti SC", "宋体", "SimSun", "Noto Serif CJK SC", serif;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── top bar ── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+    pointer-events: none;
+  }
+  .topbar > * { pointer-events: auto; }
+
+  .topbar-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text);
+    opacity: 0.7;
+  }
+
+  .btn-pinyin {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    padding: 8px 18px;
+    border: 1px solid var(--btn-border);
+    border-radius: 20px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-pinyin:active { background: var(--btn-border); }
+
+  /* ── reading area ── */
+  .reader {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 80px 24px 60px;
+  }
+
+  /* ── paragraph ── */
+  .para { margin-bottom: var(--para-gap); }
+
+  /* ── verse line ── */
+  .verse { margin-bottom: var(--verse-gap); }
+
+  .hz {
+    font-size: 32px;
+    line-height: 1.6;
+    letter-spacing: 0.08em;
+  }
+
+  .py {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--py-color);
+    letter-spacing: 0.04em;
+    visibility: hidden;
+    min-height: 1.5em;
+  }
+
+  /* ── pinyin visible state ── */
+  body.pinyin-visible .py { visibility: visible; }
+
+  /* ── toast ── */
+  .toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--toast-bg);
+    color: var(--toast-text);
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── responsive ── */
+  @media (max-width: 480px) {
+    .hz { font-size: 28px; }
+    .py { font-size: 14px; }
+    .reader { padding: 72px 16px 48px; }
+    .topbar { padding: 10px 14px; }
+  }
+</style>
+</head>
+<body class="pinyin-hidden">
+
+<div class="topbar">
+  <span class="topbar-title">三字经</span>
+  <button class="btn-pinyin" id="btnPinyin" aria-label="切换拼音显示">显示拼音</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="reader" id="reader"></div>
+
+<script>
+// ── 三字经全文数据 ──
+// 每个 paragraph 是一个 { lines: [{hz, py}, ...] }
+const SANZIJING = [
+  // ===== 1. 教育重要性与孟母故事 =====
+  [
+    {hz:"人之初，性本善", py:"rén zhī chū, xìng běn shàn"},
+    {hz:"性相近，习相远", py:"xìng xiāng jìn, xí xiāng yuǎn"},
+    {hz:"苟不教，性乃迁", py:"gǒu bú jiào, xìng nǎi qiān"},
+    {hz:"教之道，贵以专", py:"jiào zhī dào, guì yǐ zhuān"},
+    {hz:"昔孟母，择邻处", py:"xī mèng mǔ, zé lín chǔ"},
+    {hz:"子不学，断机杼", py:"zǐ bù xué, duàn jī zhù"},
+    {hz:"窦燕山，有义方", py:"dòu yān shān, yǒu yì fāng"},
+    {hz:"教五子，名俱扬", py:"jiào wǔ zǐ, míng jù yáng"},
+    {hz:"养不教，父之过", py:"yǎng bú jiào, fù zhī guò"},
+    {hz:"教不严，师之惰", py:"jiào bù yán, shī zhī duò"},
+    {hz:"子不学，非所宜", py:"zǐ bù xué, fēi suǒ yí"},
+    {hz:"幼不学，老何为", py:"yòu bù xué, lǎo hé wéi"},
+    {hz:"玉不琢，不成器", py:"yù bù zhuó, bù chéng qì"},
+    {hz:"人不学，不知义", py:"rén bù xué, bù zhī yì"},
+    {hz:"为人子，方少时", py:"wèi rén zǐ, fāng shào shí"},
+    {hz:"亲师友，习礼仪", py:"qīn shī yǒu, xí lǐ yí"},
+  ],
+  // ===== 2. 孝悌 =====
+  [
+    {hz:"香九龄，能温席", py:"xiāng jiǔ líng, néng wēn xí"},
+    {hz:"孝于亲，所当执", py:"xiào yú qīn, suǒ dāng zhí"},
+    {hz:"融四岁，能让梨", py:"róng sì suì, néng ràng lí"},
+    {hz:"弟于长，宜先知", py:"tì yú zhǎng, yí xiān zhī"},
+  ],
+  // ===== 3. 学习次序与数学 =====
+  [
+    {hz:"首孝弟，次见闻", py:"shǒu xiào tì, cì jiàn wén"},
+    {hz:"知某数，识某文", py:"zhī mǒu shù, shí mǒu wén"},
+    {hz:"一而十，十而百", py:"yī ér shí, shí ér bǎi"},
+    {hz:"百而千，千而万", py:"bǎi ér qiān, qiān ér wàn"},
+  ],
+  // ===== 4. 三才 三光 三纲 =====
+  [
+    {hz:"三才者，天地人", py:"sān cái zhě, tiān dì rén"},
+    {hz:"三光者，日月星", py:"sān guāng zhě, rì yuè xīng"},
+    {hz:"三纲者，君臣义", py:"sān gāng zhě, jūn chén yì"},
+    {hz:"父子亲，夫妇顺", py:"fù zǐ qīn, fū fù shùn"},
+  ],
+  // ===== 5. 四时 四方 =====
+  [
+    {hz:"曰春夏，曰秋冬", py:"yuē chūn xià, yuē qiū dōng"},
+    {hz:"此四时，运不穷", py:"cǐ sì shí, yùn bù qióng"},
+    {hz:"曰南北，曰西东", py:"yuē nán běi, yuē xī dōng"},
+    {hz:"此四方，应乎中", py:"cǐ sì fāng, yìng hū zhōng"},
+  ],
+  // ===== 6. 五行 五常 =====
+  [
+    {hz:"曰水火，木金土", py:"yuē shuǐ huǒ, mù jīn tǔ"},
+    {hz:"此五行，本乎数", py:"cǐ wǔ xíng, běn hū shù"},
+    {hz:"曰仁义，礼智信", py:"yuē rén yì, lǐ zhì xìn"},
+    {hz:"此五常，不容紊", py:"cǐ wǔ cháng, bù róng wěn"},
+  ],
+  // ===== 7. 六谷 六畜 =====
+  [
+    {hz:"稻粱菽，麦黍稷", py:"dào liáng shū, mài shǔ jì"},
+    {hz:"此六谷，人所食", py:"cǐ liù gǔ, rén suǒ shí"},
+    {hz:"马牛羊，鸡犬豕", py:"mǎ niú yáng, jī quǎn shǐ"},
+    {hz:"此六畜，人所饲", py:"cǐ liù chù, rén suǒ sì"},
+  ],
+  // ===== 8. 七情 八音 =====
+  [
+    {hz:"曰喜怒，曰哀惧", py:"yuē xǐ nù, yuē āi jù"},
+    {hz:"爱恶欲，七情具", py:"ài wù yù, qī qíng jù"},
+    {hz:"匏土革，木石金", py:"páo tǔ gé, mù shí jīn"},
+    {hz:"丝与竹，乃八音", py:"sī yǔ zhú, nǎi bā yīn"},
+  ],
+  // ===== 9. 九族 =====
+  [
+    {hz:"高曾祖，父而身", py:"gāo zēng zǔ, fù ér shēn"},
+    {hz:"身而子，子而孙", py:"shēn ér zǐ, zǐ ér sūn"},
+    {hz:"自子孙，至玄曾", py:"zì zǐ sūn, zhì xuán zēng"},
+    {hz:"乃九族，人之伦", py:"nǎi jiǔ zú, rén zhī lún"},
+  ],
+  // ===== 10. 十义 =====
+  [
+    {hz:"父子恩，夫妇从", py:"fù zǐ ēn, fū fù cóng"},
+    {hz:"兄则友，弟则恭", py:"xiōng zé yǒu, dì zé gōng"},
+    {hz:"长幼序，友与朋", py:"zhǎng yòu xù, yǒu yǔ péng"},
+    {hz:"君则敬，臣则忠", py:"jūn zé jìng, chén zé zhōng"},
+    {hz:"此十义，人所同", py:"cǐ shí yì, rén suǒ tóng"},
+  ],
+  // ===== 11. 小学与四书 =====
+  [
+    {hz:"凡训蒙，须讲究", py:"fán xùn méng, xū jiǎng jiū"},
+    {hz:"详训诂，明句读", py:"xiáng xùn gǔ, míng jù dòu"},
+    {hz:"为学者，必有初", py:"wéi xué zhě, bì yǒu chū"},
+    {hz:"小学终，至四书", py:"xiǎo xué zhōng, zhì sì shū"},
+  ],
+  // ===== 12. 论语 =====
+  [
+    {hz:"论语者，二十篇", py:"lún yǔ zhě, èr shí piān"},
+    {hz:"群弟子，记善言", py:"qún dì zǐ, jì shàn yán"},
+  ],
+  // ===== 13. 孟子 =====
+  [
+    {hz:"孟子者，七篇止", py:"mèng zǐ zhě, qī piān zhǐ"},
+    {hz:"讲道德，说仁义", py:"jiǎng dào dé, shuō rén yì"},
+  ],
+  // ===== 14. 中庸 礼记 =====
+  [
+    {hz:"作中庸，子思笔", py:"zuò zhōng yōng, zǐ sī bǐ"},
+    {hz:"中不偏，庸不易", py:"zhōng bù piān, yōng bú yì"},
+    {hz:"大小戴，注礼记", py:"dà xiǎo dài, zhù lǐ jì"},
+    {hz:"述圣言，礼乐备", py:"shù shèng yán, lǐ yuè bèi"},
+  ],
+  // ===== 15. 诗经 春秋 =====
+  [
+    {hz:"曰国风，曰雅颂", py:"yuē guó fēng, yuē yǎ sòng"},
+    {hz:"号四诗，当讽咏", py:"hào sì shī, dāng fěng yǒng"},
+    {hz:"诗既亡，春秋作", py:"shī jì wáng, chūn qiū zuò"},
+    {hz:"寓褒贬，别善恶", py:"yù bāo biǎn, bié shàn è"},
+  ],
+  // ===== 16. 三传 =====
+  [
+    {hz:"三传者，有公羊", py:"sān zhuàn zhě, yǒu gōng yáng"},
+    {hz:"有左氏，有谷梁", py:"yǒu zuǒ shì, yǒu gǔ liáng"},
+  ],
+  // ===== 17. 诸子 =====
+  [
+    {hz:"经既明，方读子", py:"jīng jì míng, fāng dú zǐ"},
+    {hz:"撮其要，记其事", py:"cuō qí yào, jì qí shì"},
+    {hz:"五子者，有荀扬", py:"wǔ zǐ zhě, yǒu xún yáng"},
+    {hz:"文中子，及老庄", py:"wén zhōng zǐ, jí lǎo zhuāng"},
+  ],
+  // ===== 18. 读史 =====
+  [
+    {hz:"经子通，读诸史", py:"jīng zǐ tōng, dú zhū shǐ"},
+    {hz:"考世系，知终始", py:"kǎo shì xì, zhī zhōng shǐ"},
+  ],
+  // ===== 19. 三皇 二帝 =====
+  [
+    {hz:"自羲农，至黄帝", py:"zì xī nóng, zhì huáng dì"},
+    {hz:"号三皇，居上世", py:"hào sān huáng, jū shàng shì"},
+    {hz:"唐有虞，号二帝", py:"táng yǒu yú, hào èr dì"},
+    {hz:"相揖逊，称盛世", py:"xiāng yī xùn, chēng shèng shì"},
+  ],
+  // ===== 20. 夏商周 =====
+  [
+    {hz:"夏有禹，商有汤", py:"xià yǒu yǔ, shāng yǒu tāng"},
+    {hz:"周文武，称三王", py:"zhōu wén wǔ, chēng sān wáng"},
+  ],
+  // ===== 21. 夏商更替 =====
+  [
+    {hz:"夏传子，家天下", py:"xià chuán zǐ, jiā tiān xià"},
+    {hz:"四百载，迁夏社", py:"sì bǎi zǎi, qiān xià shè"},
+    {hz:"汤伐夏，国号商", py:"tāng fá xià, guó hào shāng"},
+    {hz:"六百载，至纣亡", py:"liù bǎi zǎi, zhì zhòu wáng"},
+  ],
+  // ===== 22. 周朝 =====
+  [
+    {hz:"周武王，始诛纣", py:"zhōu wǔ wáng, shǐ zhū zhòu"},
+    {hz:"八百载，最长久", py:"bā bǎi zǎi, zuì cháng jiǔ"},
+    {hz:"周辙东，王纲坠", py:"zhōu zhé dōng, wáng gāng zhuì"},
+    {hz:"逞干戈，尚游说", py:"chěng gān gē, shàng yóu shuì"},
+  ],
+  // ===== 23. 春秋战国 秦 =====
+  [
+    {hz:"始春秋，终战国", py:"shǐ chūn qiū, zhōng zhàn guó"},
+    {hz:"五霸强，七雄出", py:"wǔ bà qiáng, qī xióng chū"},
+    {hz:"嬴秦氏，始兼并", py:"yíng qín shì, shǐ jiān bìng"},
+    {hz:"传二世，楚汉争", py:"chuán èr shì, chǔ hàn zhēng"},
+  ],
+  // ===== 24. 汉朝 =====
+  [
+    {hz:"高祖兴，汉业建", py:"gāo zǔ xīng, hàn yè jiàn"},
+    {hz:"至孝平，王莽篡", py:"zhì xiào píng, wáng mǎng cuàn"},
+    {hz:"光武兴，为东汉", py:"guāng wǔ xīng, wéi dōng hàn"},
+    {hz:"四百年，终于献", py:"sì bǎi nián, zhōng yú xiàn"},
+  ],
+  // ===== 25. 三国两晋 =====
+  [
+    {hz:"魏蜀吴，争汉鼎", py:"wèi shǔ wú, zhēng hàn dǐng"},
+    {hz:"号三国，迄两晋", py:"hào sān guó, qì liǎng jìn"},
+  ],
+  // ===== 26. 南北朝 =====
+  [
+    {hz:"宋齐继，梁陈承", py:"sòng qí jì, liáng chén chéng"},
+    {hz:"为南朝，都金陵", py:"wéi nán cháo, dū jīn líng"},
+    {hz:"北元魏，分东西", py:"běi yuán wèi, fēn dōng xī"},
+    {hz:"宇文周，与高齐", py:"yǔ wén zhōu, yǔ gāo qí"},
+  ],
+  // ===== 27. 隋 =====
+  [
+    {hz:"迨至隋，一土宇", py:"dài zhì suí, yì tǔ yǔ"},
+    {hz:"不再传，失统绪", py:"bú zài chuán, shī tǒng xù"},
+  ],
+  // ===== 28. 唐 =====
+  [
+    {hz:"唐高祖，起义师", py:"táng gāo zǔ, qǐ yì shī"},
+    {hz:"除隋乱，创国基", py:"chú suí luàn, chuàng guó jī"},
+    {hz:"二十传，三百载", py:"èr shí chuán, sān bǎi zǎi"},
+    {hz:"梁灭之，国乃改", py:"liáng miè zhī, guó nǎi gǎi"},
+  ],
+  // ===== 29. 五代 =====
+  [
+    {hz:"梁唐晋，及汉周", py:"liáng táng jìn, jí hàn zhōu"},
+    {hz:"称五代，皆有由", py:"chēng wǔ dài, jiē yǒu yóu"},
+  ],
+  // ===== 30. 宋 =====
+  [
+    {hz:"炎宋兴，受周禅", py:"yán sòng xīng, shòu zhōu shàn"},
+    {hz:"十八传，南北混", py:"shí bā chuán, nán běi hùn"},
+    {hz:"辽与金，帝号纷", py:"liáo yǔ jīn, dì hào fēn"},
+    {hz:"迨灭辽，宋犹存", py:"dài miè liáo, sòng yóu cún"},
+  ],
+  // ===== 31. 元 =====
+  [
+    {hz:"至元兴，金绪歇", py:"zhì yuán xīng, jīn xù xiē"},
+    {hz:"有宋世，一同灭", py:"yǒu sòng shì, yì tóng miè"},
+    {hz:"并中国，兼戎狄", py:"bìng zhōng guó, jiān róng dí"},
+  ],
+  // ===== 32. 明 =====
+  [
+    {hz:"明太祖，久亲师", py:"míng tài zǔ, jiǔ qīn shī"},
+    {hz:"传建文，方四祀", py:"chuán jiàn wén, fāng sì sì"},
+    {hz:"迁北京，永乐嗣", py:"qiān běi jīng, yǒng lè sì"},
+    {hz:"迨崇祯，煤山逝", py:"dài chóng zhēn, méi shān shì"},
+  ],
+  // ===== 33. 清 =====
+  [
+    {hz:"清太祖，膺景命", py:"qīng tài zǔ, yīng jǐng mìng"},
+    {hz:"靖四方，克大定", py:"jìng sì fāng, kè dà dìng"},
+    {hz:"至宣统，乃大同", py:"zhì xuān tǒng, nǎi dà tóng"},
+    {hz:"十二世，清祚终", py:"shí èr shì, qīng zuò zhōng"},
+  ],
+  // ===== 34. 读史方法 =====
+  [
+    {hz:"读史者，考实录", py:"dú shǐ zhě, kǎo shí lù"},
+    {hz:"通古今，若亲目", py:"tōng gǔ jīn, ruò qīn mù"},
+    {hz:"口而诵，心而维", py:"kǒu ér sòng, xīn ér wéi"},
+    {hz:"朝于斯，夕于斯", py:"cháo yú sī, xī yú sī"},
+  ],
+  // ===== 35. 勤学典故（一） =====
+  [
+    {hz:"昔仲尼，师项橐", py:"xī zhòng ní, shī xiàng tuó"},
+    {hz:"古圣贤，尚勤学", py:"gǔ shèng xián, shàng qín xué"},
+    {hz:"赵中令，读鲁论", py:"zhào zhōng lìng, dú lǔ lún"},
+    {hz:"彼既仕，学且勤", py:"bǐ jì shì, xué qiě qín"},
+  ],
+  // ===== 36. 勤学典故（二） =====
+  [
+    {hz:"披蒲编，削竹简", py:"pī pú biān, xiāo zhú jiǎn"},
+    {hz:"彼无书，且知勉", py:"bǐ wú shū, qiě zhī miǎn"},
+    {hz:"头悬梁，锥刺股", py:"tóu xuán liáng, zhuī cì gǔ"},
+    {hz:"彼不教，自勤苦", py:"bǐ bú jiào, zì qín kǔ"},
+  ],
+  // ===== 37. 勤学典故（三） =====
+  [
+    {hz:"如囊萤，如映雪", py:"rú náng yíng, rú yìng xuě"},
+    {hz:"家虽贫，学不辍", py:"jiā suī pín, xué bú chuò"},
+    {hz:"如负薪，如挂角", py:"rú fù xīn, rú guà jiǎo"},
+    {hz:"身虽劳，犹苦卓", py:"shēn suī láo, yóu kǔ zhuó"},
+  ],
+  // ===== 38. 勤学典故（四） =====
+  [
+    {hz:"苏老泉，二十七", py:"sū lǎo quán, èr shí qī"},
+    {hz:"始发奋，读书籍", py:"shǐ fā fèn, dú shū jí"},
+    {hz:"彼既老，犹悔迟", py:"bǐ jì lǎo, yóu huǐ chí"},
+    {hz:"尔小生，宜早思", py:"ěr xiǎo shēng, yí zǎo sī"},
+  ],
+  // ===== 39. 勤学典故（五） =====
+  [
+    {hz:"若梁灏，八十二", py:"ruò liáng hào, bā shí èr"},
+    {hz:"对大廷，魁多士", py:"duì dà tíng, kuí duō shì"},
+    {hz:"彼既成，众称异", py:"bǐ jì chéng, zhòng chēng yì"},
+    {hz:"尔小生，宜立志", py:"ěr xiǎo shēng, yí lì zhì"},
+  ],
+  // ===== 40. 勤学典故（六） =====
+  [
+    {hz:"莹八岁，能咏诗", py:"yíng bā suì, néng yǒng shī"},
+    {hz:"泌七岁，能赋棋", py:"mì qī suì, néng fù qí"},
+    {hz:"彼颖悟，人称奇", py:"bǐ yǐng wù, rén chēng qí"},
+    {hz:"尔幼学，当效之", py:"ěr yòu xué, dāng xiào zhī"},
+  ],
+  // ===== 41. 勤学典故（七）女子 =====
+  [
+    {hz:"蔡文姬，能辨琴", py:"cài wén jī, néng biàn qín"},
+    {hz:"谢道韫，能咏吟", py:"xiè dào yùn, néng yǒng yín"},
+    {hz:"彼女子，且聪敏", py:"bǐ nǚ zǐ, qiě cōng mǐn"},
+    {hz:"尔男子，当自警", py:"ěr nán zǐ, dāng zì jǐng"},
+  ],
+  // ===== 42. 勤学典故（八）刘晏 =====
+  [
+    {hz:"唐刘晏，方七岁", py:"táng liú yàn, fāng qī suì"},
+    {hz:"举神童，作正字", py:"jǔ shén tóng, zuò zhèng zì"},
+    {hz:"彼虽幼，身已仕", py:"bǐ suī yòu, shēn yǐ shì"},
+    {hz:"尔幼学，勉而致", py:"ěr yòu xué, miǎn ér zhì"},
+    {hz:"有为者，亦若是", py:"yǒu wéi zhě, yì ruò shì"},
+  ],
+  // ===== 43. 劝学收尾 =====
+  [
+    {hz:"犬守夜，鸡司晨", py:"quǎn shǒu yè, jī sī chén"},
+    {hz:"苟不学，曷为人", py:"gǒu bù xué, hé wéi rén"},
+    {hz:"蚕吐丝，蜂酿蜜", py:"cán tǔ sī, fēng niàng mì"},
+    {hz:"人不学，不如物", py:"rén bù xué, bù rú wù"},
+    {hz:"幼而学，壮而行", py:"yòu ér xué, zhuàng ér xíng"},
+    {hz:"上致君，下泽民", py:"shàng zhì jūn, xià zé mín"},
+    {hz:"扬名声，显父母", py:"yáng míng shēng, xiǎn fù mǔ"},
+    {hz:"光于前，裕于后", py:"guāng yú qián, yù yú hòu"},
+    {hz:"人遗子，金满赢", py:"rén yí zǐ, jīn mǎn yíng"},
+    {hz:"我教子，惟一经", py:"wǒ jiào zǐ, wéi yī jīng"},
+    {hz:"勤有功，戏无益", py:"qín yǒu gōng, xì wú yì"},
+    {hz:"戒之哉，宜勉力", py:"jiè zhī zāi, yí miǎn lì"},
+  ],
+];
+
+// ── 渲染 ──
+const reader = document.getElementById('reader');
+
+const frag = document.createDocumentFragment();
+SANZIJING.forEach(para => {
+  const div = document.createElement('div');
+  div.className = 'para';
+  para.forEach(v => {
+    div.innerHTML += `<div class="verse"><div class="hz">${v.hz}</div><div class="py">${v.py}</div></div>`;
+  });
+  frag.appendChild(div);
+});
+reader.appendChild(frag);
+
+// ── 拼音切换 ──
+const LS_KEY_PY = 'sanzijing-pinyin';
+const btnPinyin = document.getElementById('btnPinyin');
+
+function setPinyin(visible) {
+  document.body.classList.toggle('pinyin-visible', visible);
+  btnPinyin.textContent = visible ? '隐藏拼音' : '显示拼音';
+  localStorage.setItem(LS_KEY_PY, visible ? '1' : '0');
+}
+
+btnPinyin.addEventListener('click', () => {
+  setPinyin(!document.body.classList.contains('pinyin-visible'));
+});
+
+// 恢复拼音偏好
+if (localStorage.getItem(LS_KEY_PY) === '1') {
+  setPinyin(true);
+}
+
+// ── 滚动位置记忆 ──
+const LS_KEY_SCROLL = 'sanzijing-scroll';
+let saveTimer = null;
+
+function saveScroll() {
+  localStorage.setItem(LS_KEY_SCROLL, String(window.scrollY));
+}
+
+function restoreScroll() {
+  const saved = localStorage.getItem(LS_KEY_SCROLL);
+  if (saved !== null) {
+    const y = parseInt(saved, 10);
+    if (y > 0) {
+      window.scrollTo({ top: y, behavior: 'instant' });
+      showToast('已恢复上次阅读位置');
+    }
+  }
+}
+
+// 滚动时防抖保存
+window.addEventListener('scroll', () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveScroll, 2000);
+}, { passive: true });
+
+// 离开时保存
+window.addEventListener('beforeunload', saveScroll);
+// 页面隐藏时也保存（移动端切换 app）
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) saveScroll();
+});
+
+// ── Toast ──
+const toast = document.getElementById('toast');
+let toastTimer = null;
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ── 启动：恢复滚动位置 ──
+window.addEventListener('DOMContentLoaded', () => {
+  // 等渲染完成后恢复滚动位置
+  requestAnimationFrame(() => {
+    requestAnimationFrame(restoreScroll);
+  });
+});
+</script>
+
+</body>
+</html>
