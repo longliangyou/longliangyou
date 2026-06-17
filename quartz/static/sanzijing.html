@@ -113,13 +113,11 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: clip;
-    visibility: hidden;
+    visibility: var(--py-vis, hidden);
   }
 
   .zi.punct .py { font-size: 15px; }
 
-  /* ── pinyin visible state ── */
-  body.pinyin-visible .py { visibility: visible; }
 
   /* ── toast ── */
   .toast {
@@ -532,39 +530,41 @@ reader.appendChild(frag);
 // ── 拼音切换 ──
 const LS_KEY_PY = 'sanzijing-pinyin';
 const btnPinyin = document.getElementById('btnPinyin');
+let pinyinVisible = false;
 
 function setPinyin(visible) {
-  document.body.classList.toggle('pinyin-visible', visible);
+  pinyinVisible = visible;
+  document.documentElement.style.setProperty('--py-vis', visible ? 'visible' : 'hidden');
   btnPinyin.textContent = visible ? '隐藏拼音' : '显示拼音';
-  localStorage.setItem(LS_KEY_PY, visible ? '1' : '0');
+  try { localStorage.setItem(LS_KEY_PY, visible ? '1' : '0'); } catch (e) {}
 }
 
-btnPinyin.addEventListener('click', () => {
-  setPinyin(!document.body.classList.contains('pinyin-visible'));
-});
+btnPinyin.addEventListener('click', () => { setPinyin(!pinyinVisible); });
 
 // 恢复拼音偏好
-if (localStorage.getItem(LS_KEY_PY) === '1') {
-  setPinyin(true);
-}
+try {
+  if (localStorage.getItem(LS_KEY_PY) === '1') { setPinyin(true); }
+} catch (e) {}
 
 // ── 滚动位置记忆 ──
 const LS_KEY_SCROLL = 'sanzijing-scroll';
 let saveTimer = null;
 
 function saveScroll() {
-  localStorage.setItem(LS_KEY_SCROLL, String(window.scrollY));
+  try { localStorage.setItem(LS_KEY_SCROLL, String(window.scrollY)); } catch (e) {}
 }
 
 function restoreScroll() {
-  const saved = localStorage.getItem(LS_KEY_SCROLL);
-  if (saved !== null) {
-    const y = parseInt(saved, 10);
-    if (y > 0) {
-      window.scrollTo({ top: y, behavior: 'instant' });
-      showToast('已恢复上次阅读位置');
+  try {
+    const saved = localStorage.getItem(LS_KEY_SCROLL);
+    if (saved !== null) {
+      const y = parseInt(saved, 10);
+      if (y > 0) {
+        window.scrollTo({ top: y, behavior: 'instant' });
+        showToast('已恢复上次阅读位置');
+      }
     }
-  }
+  } catch (e) {}
 }
 
 // 滚动时防抖保存
@@ -588,74 +588,62 @@ function showToast(msg) {
   toast.textContent = msg;
   toast.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// ── 启动：恢复滚动位置 ──
+// ── 启动：页面完全渲染后恢复滚动位置 ──
 window.addEventListener('DOMContentLoaded', () => {
-  // 等渲染完成后恢复滚动位置
-  requestAnimationFrame(() => {
-    requestAnimationFrame(restoreScroll);
-  });
+  setTimeout(restoreScroll, 1200);
 });
 </script>
 
 <script>
 (function () {
   const doc = document;
-  const root = doc.documentElement;
-  let parentFullscreen = false;
-  let pendingTimer = null;
+  let cssFullscreen = false;
 
-  function fullscreenElement() {
-    return doc.fullscreenElement ||
-      doc.webkitFullscreenElement ||
-      doc.mozFullScreenElement ||
-      doc.msFullscreenElement;
-  }
-
-  function requestFullscreen(el) {
-    const fn = el.requestFullscreen ||
-      el.webkitRequestFullscreen ||
-      el.mozRequestFullScreen ||
-      el.msRequestFullscreen;
-    return fn ? fn.call(el) : Promise.reject(new Error("Fullscreen API unavailable"));
-  }
-
-  function exitFullscreen() {
-    const fn = doc.exitFullscreen ||
-      doc.webkitExitFullscreen ||
-      doc.mozCancelFullScreen ||
-      doc.msExitFullscreen;
-    return fn ? fn.call(doc) : Promise.reject(new Error("Fullscreen API unavailable"));
-  }
-
-  function isActive() {
-    return Boolean(fullscreenElement()) || parentFullscreen;
+  // 同源：直接在父页面 DOM 里找到包含本窗口的 iframe 元素
+  function findSelfFrame() {
+    try {
+      if (window.parent === window) return null;
+      const frames = window.parent.document.querySelectorAll('iframe');
+      for (let i = 0; i < frames.length; i++) {
+        if (frames[i].contentWindow === window) return frames[i];
+      }
+      return null;
+    } catch (e) { return null; }
   }
 
   function updateButton(button) {
-    const active = isActive();
-    button.textContent = active ? "退出全屏" : "全屏";
-    button.setAttribute("aria-label", active ? "退出全屏" : "进入全屏");
-    button.setAttribute("title", active ? "退出全屏" : "全屏");
+    button.textContent = cssFullscreen ? "退出全屏" : "全屏";
+    button.setAttribute("aria-label", cssFullscreen ? "退出全屏" : "进入全屏");
+    button.setAttribute("title", cssFullscreen ? "退出全屏" : "全屏");
   }
 
-  function postToParent(type) {
-    if (window.parent === window) return false;
-    window.parent.postMessage({ type }, "*");
-    return true;
-  }
-
-  function markPending(button) {
-    button.textContent = "全屏中...";
-    clearTimeout(pendingTimer);
-    pendingTimer = window.setTimeout(function () {
-      if (!isActive()) {
-        button.textContent = "不可用";
-        window.setTimeout(function () { updateButton(button); }, 1200);
+  function enterFullscreen(button) {
+    const frame = findSelfFrame();
+    if (!frame) {
+      if (typeof showToast === 'function') {
+        showToast("全屏不可用：请通过三字经页面访问");
       }
-    }, 1500);
+      return;
+    }
+    frame._fsOrigStyle = frame.style.cssText;
+    frame.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;border:none;margin:0;";
+    try { window.parent.document.documentElement.style.overflow = 'hidden'; } catch (e) {}
+    cssFullscreen = true;
+    updateButton(button);
+  }
+
+  function exitFullscreen(button) {
+    const frame = findSelfFrame();
+    if (frame) {
+      frame.style.cssText = frame._fsOrigStyle || '';
+      delete frame._fsOrigStyle;
+      try { window.parent.document.documentElement.style.overflow = ''; } catch (e) {}
+    }
+    cssFullscreen = false;
+    updateButton(button);
   }
 
   function injectStyle() {
@@ -705,31 +693,11 @@ window.addEventListener('DOMContentLoaded', () => {
     updateButton(button);
 
     button.addEventListener("click", function () {
-      if (isActive()) {
-        if (fullscreenElement()) {
-          Promise.resolve(exitFullscreen()).catch(function () { postToParent("iframe-fullscreen-exit"); });
-        } else {
-          postToParent("iframe-fullscreen-exit");
-        }
-        return;
+      if (cssFullscreen) {
+        exitFullscreen(button);
+      } else {
+        enterFullscreen(button);
       }
-
-      if (postToParent("iframe-fullscreen-request")) {
-        markPending(button);
-        return;
-      }
-
-      Promise.resolve(requestFullscreen(root)).catch(function () {
-        button.textContent = "不可用";
-        window.setTimeout(function () { updateButton(button); }, 1200);
-      });
-    });
-
-    window.addEventListener("message", function (event) {
-      if (!event.data || event.data.type !== "iframe-fullscreen-state") return;
-      parentFullscreen = Boolean(event.data.active);
-      clearTimeout(pendingTimer);
-      updateButton(button);
     });
 
     const topbar = doc.querySelector(".topbar");
@@ -739,11 +707,6 @@ window.addEventListener('DOMContentLoaded', () => {
       doc.body.classList.add("has-iframe-fullscreen-toggle");
       doc.body.appendChild(button);
     }
-
-    ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"]
-      .forEach(function (eventName) {
-        doc.addEventListener(eventName, function () { updateButton(button); });
-      });
   }
 
   if (doc.readyState === "loading") {
