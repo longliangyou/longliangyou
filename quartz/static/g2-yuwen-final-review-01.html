@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>二年级下册语文期末复习闯关</title>
+<style>
+:root{
+  --bg:#f4f7fb;
+  --ink:#1f2937;
+  --muted:#6b7280;
+  --card:#fff;
+  --line:#dbe4ef;
+  --blue:#2563eb;
+  --green:#0f9f6e;
+  --red:#e5484d;
+  --yellow:#f7b731;
+  --purple:#7c3aed;
+  --orange:#f97316;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(circle at 8% 0%,rgba(37,99,235,.14),transparent 30%),
+    radial-gradient(circle at 94% 8%,rgba(15,159,110,.14),transparent 30%),
+    linear-gradient(155deg,#eef6ff 0%,#fff8ed 100%);
+}
+button{font-family:inherit}
+.hidden{display:none!important}
+.wrap{width:100%;max-width:540px;margin:0 auto;padding:12px 12px 28px}
+.topbar{
+  position:sticky;top:0;z-index:5;
+  display:flex;align-items:center;gap:10px;
+  padding:10px 0 8px;
+  backdrop-filter:blur(10px);
+}
+.pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:34px;padding:0 12px;border-radius:999px;
+  background:rgba(255,255,255,.78);border:1px solid rgba(219,228,239,.9);
+  color:var(--muted);font-size:13px;font-weight:800;
+}
+.score{color:var(--orange)}
+.progress{flex:1;height:12px;background:rgba(219,228,239,.9);border-radius:999px;overflow:hidden}
+.progress>i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:999px;transition:width .25s ease}
+.card{
+  background:var(--card);
+  border:1px solid rgba(219,228,239,.95);
+  border-radius:18px;
+  box-shadow:0 14px 30px rgba(31,41,55,.08);
+  padding:18px;
+}
+.home-head{text-align:center;padding:12px 6px 16px}
+.home-head .mark{font-size:50px;line-height:1}
+.home-head h1{font-size:28px;line-height:1.2;margin:10px 0 6px}
+.home-head p{margin:0;color:var(--muted);font-size:15px;line-height:1.65}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.unit-btn,.mode-btn,.opt,.small-btn{
+  border:none;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease,background .12s ease;
+}
+.unit-btn:active,.mode-btn:active,.opt:active,.small-btn:active{transform:scale(.98)}
+.unit-btn{
+  min-height:82px;border:2px solid var(--line);border-radius:16px;background:#fbfdff;
+  padding:12px;text-align:left;
+}
+.unit-btn b{display:block;font-size:19px;color:var(--blue);margin-bottom:4px}
+.unit-btn span{font-size:13px;line-height:1.35;color:var(--muted);font-weight:700}
+.mode-btn{
+  width:100%;min-height:58px;margin-top:10px;border-radius:16px;
+  color:#fff;font-size:19px;font-weight:900;border:none;
+  background:linear-gradient(90deg,var(--blue),var(--green));
+  box-shadow:0 10px 18px rgba(37,99,235,.18);
+}
+.mode-btn.alt{background:linear-gradient(90deg,var(--purple),var(--orange))}
+.mode-btn.ghost{background:#eef4ff;color:var(--blue);box-shadow:none}
+.screen-title{font-size:20px;font-weight:900;margin:0 0 4px}
+.screen-sub{font-size:14px;color:var(--muted);line-height:1.5;margin:0 0 16px}
+.qtag{
+  display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;
+  background:#eef4ff;color:var(--blue);font-size:13px;font-weight:900;margin-bottom:12px;
+}
+.qprompt{font-size:clamp(20px,5.8vw,27px);font-weight:900;line-height:1.42;margin:0 0 8px}
+.qsub{font-size:15px;color:var(--muted);line-height:1.55;margin:0 0 14px}
+.options{display:flex;flex-direction:column;gap:10px}
+.opt{
+  width:100%;min-height:58px;padding:13px 15px;border-radius:15px;border:3px solid var(--line);
+  background:#fbfdff;color:var(--ink);font-size:clamp(17px,5vw,21px);font-weight:850;text-align:left;
+  line-height:1.35;
+}
+.opt.center{text-align:center}
+.opt.correct{border-color:var(--green);background:#e9fbf3;color:#08734f}
+.opt.wrong{border-color:var(--red);background:#fff0f0;color:#b4232a}
+.opt.dim{opacity:.58}
+.feedback{
+  margin-top:14px;border-radius:15px;padding:13px 14px;font-size:16px;line-height:1.55;font-weight:750;
+}
+.feedback.ok{background:#e9fbf3;color:#075e43}
+.feedback.no{background:#fff2f2;color:#a91d25}
+.actions{display:flex;gap:10px;margin-top:14px}
+.small-btn{
+  flex:1;min-height:48px;border-radius:14px;border:none;background:#eef4ff;color:var(--blue);
+  font-size:16px;font-weight:900;
+}
+.small-btn.primary{background:linear-gradient(90deg,var(--blue),var(--green));color:#fff}
+.small-btn.warn{background:#fff3e8;color:#c05621}
+.match-board{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.match-col{display:flex;flex-direction:column;gap:8px}
+.match-label{text-align:center;color:var(--muted);font-size:13px;font-weight:900;margin-bottom:2px}
+.mitem{
+  min-height:54px;display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:8px;border-radius:14px;border:3px solid var(--line);background:#fbfdff;
+  font-size:clamp(15px,4.6vw,19px);font-weight:850;line-height:1.3;cursor:pointer;
+}
+.mitem.pick{border-color:var(--blue);background:#eef4ff}
+.mitem.done{border-color:var(--green);background:#e9fbf3;color:#08734f}
+.mitem.bad{border-color:var(--red);background:#fff0f0;color:#a91d25;animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.summary{text-align:center}
+.summary .big{font-size:56px;line-height:1;margin-bottom:8px}
+.summary h2{font-size:28px;margin:0 0 6px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.stat{background:#f5f8fc;border-radius:14px;padding:12px 6px}
+.stat b{display:block;font-size:26px;color:var(--blue)}
+.stat span{font-size:13px;color:var(--muted);font-weight:800}
+.wrong-list{max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:14px;margin:12px 0;padding:6px;background:#fbfdff}
+.wrong-row{padding:9px 8px;border-bottom:1px solid #edf2f7;font-size:14px;line-height:1.45}
+.wrong-row:last-child{border-bottom:none}
+.source-note{font-size:12px;color:var(--muted);line-height:1.45;margin-top:12px;text-align:center}
+@media (max-width:420px){
+  .wrap{padding:10px 10px 24px}
+  .card{padding:15px}
+  .grid{gap:8px}
+  .unit-btn{min-height:78px;padding:10px}
+  .actions{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="topbar" class="topbar hidden">
+    <button class="pill" id="homeBtn">首页</button>
+    <div class="progress"><i id="bar"></i></div>
+    <div class="pill score" id="scoreTxt">0/0</div>
+  </div>
+  <main id="app"></main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[rnd(0,a.length-1)];
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]];}return a;}
+function uniq(a){return [...new Set(a.filter(Boolean))];}
+
+const DATA=[
+ {id:1,title:'第一单元',theme:'春天、植树、古诗',pinyin:[
+  ['gǔ shī','古诗'],['bì yù','碧玉'],['huà zhuāng','化妆'],['sī dài','丝带'],['jiǎn dāo','剪刀'],['ér tóng','儿童'],['xún zhǎo','寻找'],['méi mao','眉毛'],['liǔ zhī','柳枝'],['dàng qiū qiān','荡秋千'],['bì kōng rú xǐ','碧空如洗'],['wàn lǐ wú yún','万里无云'],['yǐn rén zhù mù','引人注目']
+ ],read:[['裁剪','cái'],['化妆','zhuāng'],['趁机','chèn'],['符合','fú'],['茁壮','zhuó'],['绚丽','xuàn'],['包裹','guǒ'],['咨询','xún']],syn:[['仔细','认真'],['满意','满足'],['惊奇','惊讶'],['美丽','漂亮']],ant:[['快活','难过'],['打开','关闭'],['笔直','弯曲'],['仔细','粗心']],coll:[['快活地','蹦跳'],['精心地','挑选'],['满意的','笑容'],['碧绿的','田野'],['细长的','柳条'],['温暖的','阳光']],idioms:['春风拂面','梳妆打扮','碧空如洗','万里无云','引人注目','兴致勃勃'],texts:[['《咏柳》中，柳叶被比作什么？','碧玉',['剪刀','丝绦','纸鸢']],['《找春天》中，小草是春天的什么？','眉毛',['眼睛','音符','琴声']],['《开满鲜花的小路》中，美好的礼物能带给别人什么？','温暖和快乐',['严肃和认真','知识和技巧','风筝和花籽']],['邓小平爷爷植树的态度是怎样的？','严肃、认真',['活泼、顽皮','马虎、随意','害羞、紧张']]],recite:[['草长莺飞二月天，拂堤杨柳醉春烟。儿童散学归来早，____。','忙趁东风放纸鸢'],['碧玉妆成一树高，____。不知细叶谁裁出，二月春风似剪刀。','万条垂下绿丝绦'],['野火烧不尽，____。','春风吹又生']]},
+ {id:2,title:'第二单元',theme:'雷锋、劳动、关爱',pinyin:[
+  ['léi fēng','雷锋'],['shū shu','叔叔'],['zú jì','足迹'],['ní nìng','泥泞'],['wēn nuǎn','温暖'],['ài xīn','爱心'],['wèi dào','味道'],['gān zhè','甘蔗'],['láo dòng','劳动'],['tè bié','特别'],['bì lǜ','碧绿'],['bō wén','波纹'],['liàn liàn bù shě','恋恋不舍']
+ ],read:[['曾经','céng'],['蒙蒙','méng'],['泥泞','nìng'],['踏步','tà'],['晶莹','yíng'],['寻觅','mì'],['的确','dí'],['甘蔗','zhè'],['荆棘','jīng jí']],syn:[['寻找','寻觅'],['足迹','脚印'],['温暖','暖和'],['特别','特殊'],['恋恋不舍','依依不舍']],ant:[['温暖','寒冷'],['年迈','年幼'],['特别','普通'],['柔软','坚硬'],['美丽','丑陋']],coll:[['长长的','小溪'],['弯弯的','小路'],['蒙蒙的','细雨'],['晶莹的','露珠'],['温暖的','春风'],['出色的','马']],idioms:['悲伤','伤心','泪流满面','闷闷不乐','恋恋不舍'],texts:[['《雷锋叔叔，你在哪里》告诉我们要学习什么精神？','关爱他人、乐于奉献',['只图简单','急于求成','盲目改变']],['《千人糕》让我们明白要珍惜什么？','他人来之不易的劳动成果',['漂亮的贝壳','新奇的目光','天然指南针']],['《一匹出色的马》中，妹妹骑的“马”其实是什么？','一根枝条',['真正的小马','一辆车','一把伞']]],recite:[['予人玫瑰，____。','手有余香'],['平时肯帮人，____。','急时有人帮'],['与其锦上添花，____。','不如雪中送炭']]},
+ {id:3,title:'第三单元',theme:'传统文化、中国美食',pinyin:[
+  ['mín zú','民族'],['qíng yì','情谊'],['chuán tǒng','传统'],['jié rì','节日'],['chūn jié','春节'],['lóng zhōu','龙舟'],['tuán yuán','团圆'],['jiǎ gǔ wén','甲骨文'],['qián bì','钱币'],['měi shí','美食'],['kǎo yā','烤鸭'],['dàn chǎo fàn','蛋炒饭']
+ ],read:[['情谊','yì'],['繁荣','fán'],['贴纸','tiē'],['贵重','guì'],['赚钱','zhuàn'],['茄子','qié'],['蒸饺','zhēng'],['干脆','cuì']],syn:[['转眼','转瞬'],['繁荣','繁盛'],['热闹','喧闹'],['团圆','团聚'],['漂亮','美丽']],ant:[['团圆','离别'],['热闹','冷清'],['漂亮','丑陋']],coll:[['长江','涌'],['珠峰','耸'],['黄河','奔'],['情谊','浓'],['贴','窗花'],['赛','龙舟']],idioms:['华夏儿女','炎黄子孙','神州大地','巍巍中华','民族团结','奋发图强','繁荣昌盛'],texts:[['带“火”的字多与什么有关？','火',['刀或切割','心理情感','钱财']],['“甜津津、酸溜溜、辣乎乎”属于哪类词？','ABB式词语',['AABB式词语','ABAC式词语','AABC式词语']],['中秋节常见习俗是什么？','吃月饼、赏月',['赛龙舟','扫墓踏青','登高赏菊']]],recite:[['十二生肖开头四个是：子鼠、____、寅虎、卯兔。','丑牛'],['春节是农历____。','正月初一'],['端午节是农历____。','五月初五']]},
+ {id:4,title:'第四单元',theme:'童心、想象、诚信',pinyin:[
+  ['cǎi sè','彩色'],['qiān bǐ hé','铅笔盒'],['sēn lín','森林'],['xuě sōng','雪松'],['mèng xiǎng','梦想'],['jīng líng','精灵'],['mǎ pǐ','马匹'],['qǐng qiú','请求'],['tóng huà','童话'],['pīn yīn','拼音'],['fā míng','发明'],['tǎn kè','坦克']
+ ],read:[['聊天','liáo'],['蹦跳','bèng'],['烟囱','cōng'],['叮咛','níng'],['请求','qiú'],['渡口','dù'],['方便','biàn'],['模型','mó xíng']],syn:[['透明','透亮'],['异常','非常'],['出色','出众'],['看望','探望'],['恋恋不舍','依依不舍']],ant:[['出色','普通'],['柔软','坚硬'],['高兴','伤心'],['喜欢','讨厌']],coll:[['彩色的','梦'],['葱郁的','森林'],['苹果般的','太阳'],['尖尖的','嘴'],['快乐地','回答'],['蓝得','透明']],idioms:['碧绿碧绿','雪白雪白','火红火红','葱葱绿绿','蹦蹦跳跳','干干净净','恋恋不舍','依依不舍'],texts:[['《彩色的梦》表现了儿童对什么的赞美与向往？','大自然',['劳动成果','传统节日','航天生活']],['《一匹出色的马》让我们感受到什么？','家人间的亲情与关爱',['大禹治水精神','雷雨前后变化','黄帝发明车船']],['《枫树上的喜鹊》中，“我”对喜鹊一家是什么感情？','喜爱',['害怕','讨厌','冷漠']]],recite:[['失信____。','不立'],['诚信者，____也。','天下之结'],['小信成则____。','大信立']]},
+ {id:5,title:'第五单元',theme:'寓言、观察、思考',pinyin:[
+  ['quàn gào','劝告'],['hé miáo','禾苗'],['sǐ wáng','死亡'],['diū shī','丢失'],['zuò wèi','座位'],['jiào shì','教室'],['yuàn yì','愿意'],['lì kè','立刻'],['chī jīng','吃惊'],['rèn zhēn','认真'],['wáng yáng bǔ láo','亡羊补牢'],['lǎo lǎo shí shí','老老实实']
+ ],read:[['牢固','láo'],['后悔','huǐ'],['焦急','jiāo'],['严肃','sù'],['教诲','huì'],['马棚','péng'],['喘气','chuǎn'],['窟窿','kū long']],syn:[['终于','到底'],['准确','精确'],['巴望','盼望'],['愿意','乐意'],['突然','忽然']],ant:[['突然','逐渐'],['明白','糊涂'],['严肃','活泼'],['仔细','马虎'],['筋疲力尽','精力充沛']],coll:[['老老实实地','画'],['焦急地','转来转去'],['难为情地','说'],['认认真真地','看'],['和颜悦色地','说']],idioms:['微笑','狂笑','眉开眼笑','破涕为笑','哈哈大笑','捧腹大笑','寻找','教诲','伙伴','柔软'],texts:[['《亡羊补牢》告诉我们什么？','做错事肯接受意见、认真改正，就不算晚',['急于求成会成功','要盲目改变自己','水会失重']],['《揠苗助长》告诉我们不要怎样？','急于求成',['认真观察','亲自试一试','珍惜劳动成果']],['《小马过河》告诉我们要怎样得出结论？','动脑筋思考，并亲自试一试',['只听别人说','只看外表','只图简单']]],recite:[['冠必正，纽必结，袜与履，____。','俱紧切'],['唯德学，唯才艺，不如人，____。','当自砺'],['若衣服，若饮食，不如人，____。','勿生戚']]},
+ {id:6,title:'第六单元',theme:'自然、方向、太空',pinyin:[
+  ['mén chuāng','门窗'],['shān lǐng','山岭'],['lián huā','莲花'],['léi yǔ','雷雨'],['wū yún','乌云'],['qīng xīn','清新'],['yā lì','压力'],['zhǐ nán zhēn','指南针'],['bāng máng','帮忙'],['běi jí xīng','北极星'],['yǔ zhòu fēi chuán','宇宙飞船'],['kōng jiān zhàn','空间站']
+ ],read:[['鸣叫','míng'],['山岭','lǐng'],['停泊','bó'],['寺院','sì'],['毕竟','jìng'],['蝉鸣','chán'],['灯盏','zhǎn'],['稠密','chóu']],syn:[['打开','敞开'],['观察','察看'],['容易','轻易'],['普通','一般'],['帮助','帮忙'],['忠实','忠诚']],ant:[['稠','稀'],['清新','污浊'],['简单','复杂'],['有趣','乏味'],['普通','特殊']],coll:[['一行','白鹭'],['一阵','大风'],['一条','彩虹'],['一盏','指路灯'],['辨别','方向'],['解决','问题']],idioms:['毛毛雨','阵雨','雷雨','暴雨','博物馆','展览馆','科技馆','体育馆'],texts:[['《雷雨》按什么顺序写？','雷雨前、雷雨中、雷雨后',['春天、夏天、秋天','早上、中午、晚上','睡觉、活动、喝水']],['《要是你在野外迷了路》介绍了几种自然指南针？','四种',['两种','三种','六种']],['《太空生活趣事多》介绍了航天员哪些趣事？','睡觉、活动、喝水、洗澡',['扫尘、拜年、猜灯谜','挖坑、栽树、填土','画画、唱歌、做游戏']]],recite:[['春雨惊春清谷天，____。','夏满芒夏暑相连'],['秋处露秋寒霜降，____。','冬雪雪冬小大寒'],['北极星是盏____。','指路灯']]},
+ {id:7,title:'第七单元',theme:'童话、改变、成长',pinyin:[
+  ['shàn zi','扇子'],['màn màn','慢慢'],['yù dào','遇到'],['jué dìng','决定'],['shāng diàn','商店'],['qīng wā','青蛙'],['quán shuǐ','泉水'],['yóu yǒng','游泳'],['mài diào','卖掉'],['bān jiā','搬家'],['fǎng fú','仿佛'],['fǎng zhī','纺织']
+ ],read:[['竹竿','gān'],['播撒','bō'],['编织','biān'],['挣脱','zhèng'],['招牌','pái'],['口罩','zhào'],['可怜','lián'],['尽力','jìn']],syn:[['仿佛','好像'],['一定','必定'],['牢固','坚固'],['悲观','失望'],['迟疑','犹豫']],ant:[['一定','或许'],['经常','偶尔'],['突然','渐渐'],['失望','满意'],['悲观','乐观']],coll:[['新奇的','目光'],['轻盈的','翅膀'],['绿茵茵的','小草'],['愉快地','舞动'],['笨手笨脚的','小毛虫']],idioms:['生机勃勃','尽心竭力','与世隔绝','色彩斑斓','笨手笨脚','九牛二虎之力'],texts:[['《大象的耳朵》告诉我们要怎样对待别人的看法？','要有自己的判断',['别人说什么都照做','只图简单','急于求成']],['《蜘蛛开店》告诉我们做事不能怎样？','只图简单',['不断改变','细心观察','亲自尝试']],['《小毛虫》告诉我们万事万物都有自己的什么？','规律',['节日','方向','价格']]],recite:[['春种一粒粟，____。','秋收万颗子'],['四海无闲田，____。','农夫犹饿死'],['大象只要把大耳朵一扇，就能把虫子____。','赶跑']]},
+ {id:8,title:'第八单元',theme:'神话、发明、治水',pinyin:[
+  ['kāi shǐ','开始'],['guāng míng','光明'],['jué xīn','决心'],['shēng jī','生机'],['shè jī','射击'],['yán rè','炎热'],['chuán shuō','传说'],['qǐ fā','启发'],['bān yùn','搬运'],['zì yóu','自由'],['dào lǐ','道理'],['ān jū lè yè','安居乐业']
+ ],read:[['桑树','sāng'],['跨过','kuà'],['熔化','róng'],['裂口','liè'],['滋润','rùn'],['创造','chuàng'],['毁坏','huǐ'],['驱赶','qū']],syn:[['温暖','暖和'],['炙烤','烘烤'],['繁茂','茂盛'],['炎热','酷热'],['改善','改进'],['爱戴','拥戴']],ant:[['光明','黑暗'],['滋润','干燥'],['炎热','严寒'],['辛苦','轻松']],coll:[['翻过','高山'],['跨过','大河'],['登上','大山'],['搭上','神箭'],['吸取','教训'],['疏通','河道'],['治服','洪水']],idioms:['很久很久','很多很多','慌慌张张','安安稳稳','勃勃生机','念念不忘','忽然','逐渐'],texts:[['《羿射九日》中，羿射下几个太阳？','九个',['一个','十个','八个']],['《黄帝的传说》说明什么改善了人们的生活？','发明创造',['背诵古诗','词语搭配','扫墓踏青']],['《大禹治水》中，大禹采用什么方法治服洪水？','疏导',['堵塞','射日','织围巾']]],recite:[['江上往来人，____。','但爱鲈鱼美'],['君看一叶舟，____。','出没风波里'],['大禹治水让百姓过上了____的生活。','幸福']]}
+];
+
+const MULTI=[
+ {unit:3,prompt:'水面上漂着漂亮的枫叶。第一个“漂”读什么？',answer:'piāo',options:['piāo','piào','piǎo','piáo'],explain:'漂：piāo（漂流、漂白），piào（漂亮）'},
+ {unit:3,prompt:'“漂亮”的“漂”读什么？',answer:'piào',options:['piāo','piào','piǎo','piáo'],explain:'漂：piāo（漂流、漂白），piào（漂亮）'},
+ {unit:3,prompt:'“油炸”的“炸”读什么？',answer:'zhá',options:['zhà','zhá','zǎ','zā'],explain:'炸：zhà（爆炸），zhá（油炸）'},
+ {unit:4,prompt:'“倒影”的“倒”读什么？',answer:'dào',options:['dǎo','dào','dāo','tǎo'],explain:'倒：dǎo（摔倒），dào（倒影、倒流）'},
+ {unit:5,prompt:'“羊圈”的“圈”读什么？',answer:'juàn',options:['juàn','quān','juǎn','quǎn'],explain:'圈：juàn（羊圈），quān（项圈），juǎn（圈窗）'},
+ {unit:6,prompt:'“重复”的“重”读什么？',answer:'chóng',options:['chóng','zhòng','cóng','zòng'],explain:'重：chóng（重复），zhòng（重要）'},
+ {unit:7,prompt:'“扇风”的“扇”读什么？',answer:'shān',options:['shān','shàn','sàn','sǎn'],explain:'扇：shān（扇风），shàn（电扇）'},
+ {unit:7,prompt:'“喝彩”的“喝”读什么？',answer:'hè',options:['hē','hè','kē','gē'],explain:'喝：hè（喝彩），hē（喝茶）'},
+ {unit:7,prompt:'“测量”的“量”读什么？',answer:'liáng',options:['liáng','liàng','niáng','liǎng'],explain:'量：liáng（测量），liàng（力量）'},
+ {unit:8,prompt:'“待会儿”的“待”读什么？',answer:'dāi',options:['dāi','dài','tái','tāi'],explain:'待：dāi（待会儿），dài（等待）'},
+ {unit:8,prompt:'“灾难”的“难”读什么？',answer:'nàn',options:['nán','nàn','lán','nǎn'],explain:'难：nán（难题），nàn（灾难）'}
+];
+const CATS=[
+ {unit:3,label:'ABB式词语',words:['甜津津','酸溜溜','辣乎乎','香喷喷','油腻腻','软绵绵','脆生生','硬邦邦']},
+ {unit:3,label:'中国人称呼',words:['华夏儿女','炎黄子孙']},
+ {unit:3,label:'形容兴盛、奋发',words:['奋发图强','繁荣昌盛']},
+ {unit:4,label:'ABAB式词语',words:['碧绿碧绿','雪白雪白','火红火红']},
+ {unit:4,label:'AABB式词语',words:['葱葱绿绿','蹦蹦跳跳','干干净净']},
+ {unit:4,label:'AABC式词语',words:['恋恋不舍','依依不舍','扬扬自得']},
+ {unit:5,label:'表示笑的词语',words:['微笑','狂笑','傻笑','笑眯眯','笑呵呵','眉开眼笑','破涕为笑','哈哈大笑','捧腹大笑']},
+ {unit:6,label:'雨的类别',words:['毛毛雨','阵雨','雷雨','暴雨']},
+ {unit:6,label:'场所名称词',words:['博物馆','展览馆','科技馆','体育馆','研究所','哨所','诊所','律师事务所']},
+ {unit:7,label:'清洁卫生有关',words:['扫帚','抹布','拖把','水桶','簸箕','扫地','擦玻璃','倒垃圾']},
+ {unit:8,label:'AABB式词语',words:['慌慌张张','安安稳稳','平平安安','长长久久']},
+ {unit:8,label:'快慢有关的词语',words:['忽然','突然','立刻','马上','一瞬间','一眨眼','逐渐','渐渐','慢慢','徐徐','慢吞吞','慢悠悠']}
+];
+const STORAGE='g2_yuwen_final_review_01';
+const WRONG_KEY=STORAGE+'_wrongbook';
+let S={screen:'home',deck:[],idx:0,ok:0,bad:0,wrong:[],answered:false,picked:null,mode:'',modeType:'final',unitId:null,match:null};
+
+function allUnits(){return DATA;}
+function unitById(id){return DATA.find(u=>u.id===id);}
+function distract(answer,pool,n=3){
+  const arr=shuffle(uniq(pool).filter(x=>x!==answer)).slice(0,n);
+  return shuffle([answer,...arr]);
+}
+function choice(unit,kind,prompt,answer,pool,explain){
+  return {type:'choice',unit:unit.id,kind,prompt,answer,options:distract(answer,pool),explain};
+}
+function loadWrong(){try{return JSON.parse(localStorage.getItem(WRONG_KEY)||'[]');}catch(_){return [];}}
+function saveWrong(items){localStorage.setItem(WRONG_KEY,JSON.stringify(items.slice(0,80)));}
+function addWrong(q){
+  const items=loadWrong();
+  const key=[q.unit,q.kind,q.prompt,q.answer].join('|');
+  const old=items.find(x=>x.key===key);
+  if(old){old.count++;old.last=new Date().toLocaleDateString('zh-CN');old.q=q;}
+  else items.unshift({key,count:1,last:new Date().toLocaleDateString('zh-CN'),q});
+  saveWrong(items);
+}
+function buildMultiQuestions(unit){
+  return MULTI.filter(x=>x.unit===unit.id).map(x=>({type:'choice',unit:unit.id,kind:'多音字辨析',prompt:x.prompt,answer:x.answer,options:shuffle(x.options),explain:x.explain}));
+}
+function buildCategoryQuestions(unit){
+  const allWords=CATS.flatMap(c=>c.words);
+  return CATS.filter(c=>c.unit===unit.id).map(c=>{
+    const answer=pick(c.words);
+    return choice(unit,'词语归类小货架',`下列哪个词属于“${c.label}”？`,answer,allWords,`${answer} 属于 ${c.label}`);
+  });
+}
+function buildUnitQuestions(unit){
+  const all=DATA;
+  const wordPool=all.flatMap(u=>u.pinyin.map(x=>x[1]));
+  const pyPool=all.flatMap(u=>u.read.map(x=>x[1]));
+  const relPool=all.flatMap(u=>u.syn.concat(u.ant).flatMap(x=>x));
+  const collRight=all.flatMap(u=>u.coll.map(x=>x[1]));
+  const textAns=all.flatMap(u=>u.texts.map(x=>x[1]));
+  const recAns=all.flatMap(u=>u.recite.map(x=>x[1]));
+  const qs=[];
+  shuffle(unit.pinyin).slice(0,4).forEach(([py,w])=>qs.push(choice(unit,'看拼音选词',`看到拼音“${py}”，应该选哪个词语？`,w,wordPool,`词语听写：${w}`)));
+  shuffle(unit.read).slice(0,3).forEach(([w,py])=>qs.push(choice(unit,'字音辨认',`“${w}”中重点字的正确读音是哪个？`,py,pyPool,`易读错的字：${w}（${py}）`)));
+  qs.push(...shuffle(buildMultiQuestions(unit)).slice(0,2));
+  shuffle(unit.syn).slice(0,2).forEach(([a,b])=>qs.push(choice(unit,'近义词',`“${a}”的近义词是哪个？`,b,relPool,`${a}—${b}`)));
+  shuffle(unit.ant).slice(0,2).forEach(([a,b])=>qs.push(choice(unit,'反义词',`“${a}”的反义词是哪个？`,b,relPool,`${a}—${b}`)));
+  shuffle(unit.coll).slice(0,3).forEach(([a,b])=>qs.push(choice(unit,'词语搭配',`请选择能和“${a}”正确搭配的词语。`,b,collRight,`${a}${b}`)));
+  shuffle(unit.texts).slice(0,3).forEach(([p,a,wr])=>qs.push({type:'choice',unit:unit.id,kind:'课文回顾',prompt:p,answer:a,options:shuffle([a,...wr]),explain:'来自课文回顾'}));
+  shuffle(unit.texts).slice(0,1).forEach(([p,a,wr])=>qs.push({type:'choice',unit:unit.id,kind:'课文线索侦探',prompt:`线索：${p.replace('？','')}。答案是？`,answer:a,options:shuffle([a,...wr]),explain:'来自课文回顾'}));
+  qs.push(...shuffle(buildCategoryQuestions(unit)).slice(0,2));
+  shuffle(unit.recite).slice(0,2).forEach(([p,a])=>qs.push(choice(unit,'积累背诵',p,a,recAns,'来自积累背诵')));
+  if(unit.coll.length>=4) qs.push(buildMatch(unit));
+  return shuffle(qs);
+}
+function buildMatch(unit){
+  const pairs=shuffle(unit.coll).slice(0,4).map(([l,r])=>({l,r}));
+  return {type:'match',unit:unit.id,kind:'搭配连线',prompt:'把左边和右边的词语搭配起来。',pairs,left:shuffle(pairs.map((p,i)=>({id:i,text:p.l}))),right:shuffle(pairs.map((p,i)=>({id:i,text:p.r}))),explain:'来自词语搭配'};
+}
+function buildDeck(mode,id){
+  if(mode==='unit'){
+    return buildUnitQuestions(unitById(id)).slice(0,18);
+  }
+  const deck=[];
+  DATA.forEach(u=>deck.push(...buildUnitQuestions(u).slice(0,4)));
+  const extras=DATA.flatMap(u=>buildUnitQuestions(u).filter(q=>q.kind==='课文回顾'||q.kind==='积累背诵'));
+  return shuffle(deck.concat(shuffle(extras).slice(0,8))).slice(0,40);
+}
+
+function start(mode,id){
+  S={screen:'quiz',deck:buildDeck(mode,id),idx:0,ok:0,bad:0,wrong:[],answered:false,picked:null,mode:mode==='unit'?unitById(id).title:(mode==='wrong'?'错题再练':'综合复习'),modeType:mode,unitId:id||null,match:null};
+  if(mode==='wrong'){
+    S.deck=shuffle(loadWrong().map(x=>x.q).filter(Boolean)).slice(0,20);
+    if(!S.deck.length) S.screen='home';
+  }
+  saveState();
+  render();
+}
+function saveState(){
+  try{localStorage.setItem(STORAGE,JSON.stringify({mode:S.mode,ok:S.ok,bad:S.bad}));}catch(_){}
+}
+
+function render(){
+  $('#topbar').classList.toggle('hidden',S.screen==='home');
+  $('#homeBtn').onclick=()=>{S.screen='home';render();};
+  if(S.screen!=='home'){
+    const total=S.deck.length||1;
+    $('#bar').style.width=Math.round(S.idx/total*100)+'%';
+    $('#scoreTxt').textContent=`${S.ok}/${Math.max(S.idx,S.ok+S.bad)}`;
+  }
+  if(S.screen==='home') renderHome();
+  else if(S.screen==='quiz') renderQuiz();
+  else renderDone();
+}
+function renderHome(){
+  const units=DATA.map(u=>`<button class="unit-btn" data-unit="${u.id}"><b>${u.title}</b><span>${u.theme}</span></button>`).join('');
+  const wb=loadWrong();
+  $('#app').innerHTML=`<section class="card">
+    <div class="home-head">
+      <div class="mark">📚</div>
+      <h1>语文期末复习闯关</h1>
+      <p>二年级下册 · 8个单元<br>字音、词语、搭配、近反义词、课文回顾和背诵混合练。</p>
+    </div>
+    <button class="mode-btn alt" id="finalBtn">综合复习：跨单元混合挑战</button>
+    <button class="mode-btn ghost ${wb.length?'':'hidden'}" id="wrongBtn">错题再练：${wb.length} 个知识点</button>
+    <p class="screen-sub" style="margin:14px 2px 10px">单元复习</p>
+    <div class="grid">${units}</div>
+    <div class="source-note">题目内容来自《知识清单（二下语文）》；每次进入会随机抽题。</div>
+  </section>`;
+  $('#finalBtn').onclick=()=>start('final');
+  if(wb.length) $('#wrongBtn').onclick=()=>start('wrong');
+  document.querySelectorAll('[data-unit]').forEach(b=>b.onclick=()=>start('unit',+b.dataset.unit));
+}
+function renderQuiz(){
+  if(S.idx>=S.deck.length){S.screen='done';render();return;}
+  const q=S.deck[S.idx];
+  if(q.type==='match') return renderMatch(q);
+  const unit=unitById(q.unit);
+  const opts=q.options.map(o=>{
+    let cls='opt';
+    if(S.answered){
+      if(o===q.answer) cls+=' correct';
+      else if(o===S.picked) cls+=' wrong';
+      else cls+=' dim';
+    }
+    return `<button class="${cls}" data-opt="${escapeHtml(o)}">${o}</button>`;
+  }).join('');
+  $('#app').innerHTML=`<section class="card">
+    <div class="qtag">${S.mode} · ${unit.title} · ${q.kind}</div>
+    <h2 class="qprompt">${q.prompt}</h2>
+    <p class="qsub">第 ${S.idx+1} / ${S.deck.length} 题。选完会显示答案，错题稍后再遇到。</p>
+    <div class="options">${opts}</div>
+    <div id="fb"></div>
+  </section>`;
+  document.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>answerChoice(b.textContent));
+  if(S.answered) showFeedback(q,S.picked===q.answer);
+}
+function answerChoice(value){
+  if(S.answered)return;
+  const q=S.deck[S.idx];
+  S.answered=true;S.picked=value;
+  const ok=value===q.answer;
+  ok?S.ok++:S.bad++;
+  if(!ok){
+    S.wrong.push(q);
+    addWrong(q);
+    const gap=Math.min(S.deck.length-S.idx-1,rnd(3,5));
+    S.deck.splice(S.idx+1+gap,0,q);
+  }
+  renderQuiz();
+}
+function showFeedback(q,ok){
+  $('#fb').innerHTML=`<div class="feedback ${ok?'ok':'no'}">
+    ${ok?'答对了。':'这题先记一下。'}正确答案：<b>${q.answer}</b><br>${q.explain||''}
+  </div>
+  <div class="actions">
+    <button class="small-btn primary" id="nextBtn">${S.idx+1>=S.deck.length?'看结果':'下一题'}</button>
+  </div>`;
+  $('#nextBtn').onclick=()=>{S.idx++;S.answered=false;S.picked=null;saveState();render();};
+}
+function renderMatch(q){
+  if(!S.match||S.match.q!==q){
+    S.match={q,done:new Set(),lp:null,rp:null,bad:null};
+  }
+  const m=S.match;
+  const left=q.left.map(x=>matchItem('l',x,m)).join('');
+  const right=q.right.map(x=>matchItem('r',x,m)).join('');
+  $('#app').innerHTML=`<section class="card">
+    <div class="qtag">${S.mode} · ${unitById(q.unit).title} · ${q.kind}</div>
+    <h2 class="qprompt">${q.prompt}</h2>
+    <p class="qsub">先点左边，再点右边。全部配对成功才过关。</p>
+    <div class="match-board">
+      <div><div class="match-label">左边</div><div class="match-col">${left}</div></div>
+      <div><div class="match-label">右边</div><div class="match-col">${right}</div></div>
+    </div>
+  </section>`;
+  document.querySelectorAll('[data-mid]').forEach(el=>el.onclick=()=>pickMatch(el.dataset.side,+el.dataset.mid));
+}
+function matchItem(side,x,m){
+  let cls='mitem';
+  if(m.done.has(x.id)) cls+=' done';
+  if((side==='l'&&m.lp===x.id)||(side==='r'&&m.rp===x.id)) cls+=' pick';
+  if(m.bad&&m.bad.side===side&&m.bad.id===x.id) cls+=' bad';
+  return `<div class="${cls}" data-side="${side}" data-mid="${x.id}">${x.text}</div>`;
+}
+function pickMatch(side,id){
+  const m=S.match;
+  if(m.done.has(id)||m.bad)return;
+  if(side==='l')m.lp=m.lp===id?null:id;else m.rp=m.rp===id?null:id;
+  if(m.lp!==null&&m.rp!==null){
+    if(m.lp===m.rp){
+      m.done.add(m.lp);m.lp=null;m.rp=null;
+      if(m.done.size===m.q.pairs.length){
+        S.ok++;
+        setTimeout(()=>{S.idx++;S.match=null;saveState();render();},550);
+      }
+    }else{
+      S.bad++;S.wrong.push(m.q);
+      addWrong(m.q);
+      m.bad={side:'r',id:m.rp};m.lp=null;m.rp=null;
+      S.deck.splice(Math.min(S.deck.length,S.idx+4),0,m.q);
+      setTimeout(()=>{m.bad=null;renderMatch(m.q);},500);
+    }
+  }
+  renderMatch(m.q);
+}
+function renderDone(){
+  const total=S.ok+S.bad;
+  const acc=total?Math.round(S.ok/total*100):100;
+  const rows=uniq(S.wrong.map(q=>`${unitById(q.unit).title} · ${q.kind}：${q.prompt.replace(/<[^>]+>/g,'')} → ${q.answer}`))
+    .map(x=>`<div class="wrong-row">${x}</div>`).join('');
+  $('#bar').style.width='100%';
+  $('#scoreTxt').textContent=`${S.ok}/${total}`;
+  $('#app').innerHTML=`<section class="card summary">
+    <div class="big">${acc>=90?'🏆':acc>=75?'⭐':'💪'}</div>
+    <h2>${acc>=90?'通关很稳':acc>=75?'还差一点':'继续补记'}</h2>
+    <p class="screen-sub">${S.mode}完成。错过的题已经在本轮中重新出现过，下面保留错题线索。</p>
+    <div class="stats">
+      <div class="stat"><b>${S.ok}</b><span>答对</span></div>
+      <div class="stat"><b>${S.bad}</b><span>答错</span></div>
+      <div class="stat"><b>${acc}%</b><span>正确率</span></div>
+    </div>
+    ${rows?`<div class="wrong-list">${rows}</div>`:''}
+    <div class="actions">
+      <button class="small-btn primary" id="againBtn">再来一轮</button>
+      <button class="small-btn" id="homeAgainBtn">回首页</button>
+    </div>
+  </section>`;
+  $('#againBtn').onclick=()=>start(S.modeType,S.unitId);
+  $('#homeAgainBtn').onclick=()=>{S.screen='home';render();};
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+render();
+</script>
+</body>
+</html>
