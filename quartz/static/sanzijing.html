@@ -120,6 +120,83 @@
 
   .zi.punct .py { font-size: 15px; }
 
+  /* ── section title (目录锚点) ── */
+  .sec { scroll-margin-top: 64px; }
+  .sec-title {
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    font-weight: normal;
+    color: var(--py-color);
+    letter-spacing: 0.18em;
+    opacity: 0.72;
+    margin: 0 0 1.1em;
+  }
+
+  /* ── 浮动目录：右下浮标 + 右侧抽屉 ── */
+  .btn-toc {
+    position: fixed;
+    right: 18px; bottom: 22px;
+    z-index: 150;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-toc:active { background: var(--btn-border); }
+
+  .toc-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s;
+    z-index: 200;
+  }
+  .toc-overlay.show { opacity: 1; pointer-events: auto; }
+
+  .toc-drawer {
+    position: fixed; top: 0; right: 0;
+    height: 100%; width: min(78vw, 300px);
+    background: var(--bg);
+    box-shadow: -6px 0 24px rgba(0,0,0,.22);
+    transform: translateX(100%);
+    transition: transform .28s ease;
+    z-index: 201;
+    display: flex; flex-direction: column;
+  }
+  .toc-drawer.show { transform: translateX(0); }
+
+  .toc-header {
+    padding: 18px 20px 12px;
+    font-weight: bold; font-size: 17px;
+    color: var(--text);
+    border-bottom: 1px solid var(--btn-border);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .toc-list {
+    list-style: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 0;
+    flex: 1;
+  }
+  .toc-list li {
+    padding: 11px 20px;
+    font-size: 15px;
+    color: var(--text);
+    cursor: pointer;
+    border-bottom: 1px solid rgba(196,184,168,.28);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toc-list li:active { background: var(--btn-bg); }
+
 
   /* ── toast ── */
   .toast {
@@ -160,6 +237,13 @@
 <div class="toast" id="toast"></div>
 
 <div class="reader" id="reader"></div>
+
+<button class="btn-toc" id="btnToc" aria-label="打开目录">目录</button>
+<div class="toc-overlay" id="tocOverlay"></div>
+<aside class="toc-drawer" id="tocDrawer" aria-label="目录">
+  <div class="toc-header">目录</div>
+  <ul class="toc-list" id="tocList"></ul>
+</aside>
 
 <script>
 // ── 三字经全文数据 ──
@@ -473,6 +557,19 @@ const SANZIJING = [
   ],
 ];
 
+// 每个小节的目录标题，顺序与上方段落一一对应（共 43 段）
+const SECTION_TITLES = [
+  "人之初", "孝悌", "知数识文", "三才三纲", "四时四方",
+  "五行五常", "六谷六畜", "七情八音", "九族", "十义",
+  "训蒙·四书", "论语", "孟子", "中庸·礼记", "诗经·春秋",
+  "三传", "诸子", "读史", "三皇二帝", "夏商周",
+  "夏与商", "周朝", "春秋战国·秦", "汉朝", "三国两晋",
+  "南北朝", "隋", "唐", "五代", "宋",
+  "元", "明", "清", "读史之法", "勤学（一）",
+  "勤学（二）", "勤学（三）", "勤学（四）", "勤学（五）", "勤学（六）",
+  "勤学·女子", "勤学·刘晏", "劝学收尾",
+];
+
 // ── 渲染 ──
 const reader = document.getElementById('reader');
 const PUNCT_RE = /^[，。！？；：、,.!?;:]$/;
@@ -521,13 +618,39 @@ function renderVerse(verse) {
 }
 
 const frag = document.createDocumentFragment();
-SANZIJING.forEach(para => {
-  const div = document.createElement('div');
-  div.className = 'para';
-  div.innerHTML = para.map(renderVerse).join('');
-  frag.appendChild(div);
+SANZIJING.forEach((para, i) => {
+  const sec = document.createElement('section');
+  sec.className = 'sec';
+  sec.id = 'sec-' + i;
+  const title = SECTION_TITLES[i] || '';
+  sec.innerHTML =
+    (title ? `<h2 class="sec-title">${escapeHtml(title)}</h2>` : '') +
+    `<div class="para">${para.map(renderVerse).join('')}</div>`;
+  frag.appendChild(sec);
 });
 reader.appendChild(frag);
+
+// ── 浮动目录 ──
+const btnToc = document.getElementById('btnToc');
+const tocDrawer = document.getElementById('tocDrawer');
+const tocOverlay = document.getElementById('tocOverlay');
+const tocList = document.getElementById('tocList');
+
+SECTION_TITLES.forEach((t, i) => {
+  const li = document.createElement('li');
+  li.textContent = (i + 1) + '. ' + t;
+  li.addEventListener('click', () => {
+    closeToc();
+    const target = document.getElementById('sec-' + i);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  tocList.appendChild(li);
+});
+
+function openToc() { tocDrawer.classList.add('show'); tocOverlay.classList.add('show'); }
+function closeToc() { tocDrawer.classList.remove('show'); tocOverlay.classList.remove('show'); }
+btnToc.addEventListener('click', openToc);
+tocOverlay.addEventListener('click', closeToc);
 
 // ── 拼音切换 ──
 const btnPinyin = document.getElementById('btnPinyin');
