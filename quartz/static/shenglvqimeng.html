@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>声律启蒙</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --text: #3d2b1f;
+    --py-color: #a08060;
+    --btn-bg: #e8ddd0;
+    --btn-text: #5d4037;
+    --btn-border: #c4b8a8;
+    --toast-bg: #3d2b1f;
+    --toast-text: #f5f0e8;
+    --para-gap: 3em;
+    --verse-gap: 0.6em;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Songti SC", "宋体", "SimSun", "Noto Serif CJK SC", serif;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── top bar ── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+    pointer-events: none;
+  }
+  .topbar > * { pointer-events: auto; }
+
+  .topbar-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text);
+    opacity: 0.7;
+  }
+
+  .btn-pinyin {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    padding: 8px 18px;
+    border: 1px solid var(--btn-border);
+    border-radius: 20px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    /* 右侧留白把按钮左移一个按钮位，避开父页面悬浮在右上角的「全屏」按钮 */
+    margin-right: 84px;
+  }
+  .btn-pinyin:active { background: var(--btn-border); }
+
+  /* ── reading area ── */
+  .reader {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 80px 24px 60px;
+  }
+
+  /* ── paragraph ── */
+  .para { margin-bottom: var(--para-gap); }
+
+  /* ── verse line: every hanzi/punctuation occupies one equal column ── */
+  .verse {
+    --cell-width: 3.25em;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    align-items: end;
+    width: min(100%, calc(var(--cols) * var(--cell-width)));
+    margin: 0 auto var(--verse-gap);
+    text-align: center;
+  }
+
+  .zi {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .hz {
+    width: 100%;
+    font-size: 32px;
+    line-height: 1.45;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
+  .py {
+    width: 100%;
+    min-height: 1.35em;
+    color: var(--py-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 13px;
+    line-height: 1.25;
+    letter-spacing: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    visibility: hidden;
+  }
+
+  .zi.punct .py { font-size: 15px; }
+
+  /* ── section title (目录锚点) ── */
+  .sec { scroll-margin-top: 64px; }
+  .sec-title {
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    font-weight: normal;
+    color: var(--py-color);
+    letter-spacing: 0.18em;
+    opacity: 0.72;
+    margin: 0 0 1.1em;
+  }
+
+  /* ── 浮动目录：右下浮标 + 右侧抽屉 ── */
+  .btn-toc {
+    position: fixed;
+    right: 18px; bottom: 22px;
+    z-index: 150;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-toc:active { background: var(--btn-border); }
+
+  .toc-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s;
+    z-index: 200;
+  }
+  .toc-overlay.show { opacity: 1; pointer-events: auto; }
+
+  .toc-drawer {
+    position: fixed; top: 0; right: 0;
+    height: 100%; width: min(78vw, 300px);
+    background: var(--bg);
+    box-shadow: -6px 0 24px rgba(0,0,0,.22);
+    transform: translateX(100%);
+    transition: transform .28s ease;
+    z-index: 201;
+    display: flex; flex-direction: column;
+  }
+  .toc-drawer.show { transform: translateX(0); }
+
+  .toc-header {
+    padding: 18px 20px 12px;
+    font-weight: bold; font-size: 17px;
+    color: var(--text);
+    border-bottom: 1px solid var(--btn-border);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .toc-list {
+    list-style: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 0;
+    flex: 1;
+  }
+  .toc-list li {
+    padding: 11px 20px;
+    font-size: 15px;
+    color: var(--text);
+    cursor: pointer;
+    border-bottom: 1px solid rgba(196,184,168,.28);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toc-list li:active { background: var(--btn-bg); }
+
+
+  /* ── toast ── */
+  .toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--toast-bg);
+    color: var(--toast-text);
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── responsive ── */
+  @media (max-width: 480px) {
+    .verse { --cell-width: 2.85em; }
+    .hz { font-size: 28px; }
+    .py { font-size: 11.5px; }
+    .reader { padding: 72px 16px 48px; }
+    .topbar { padding: 10px 14px; }
+  }
+</style>
+</head>
+<body class="pinyin-hidden">
+
+<div class="topbar">
+  <span class="topbar-title">声律启蒙</span>
+  <button class="btn-pinyin" id="btnPinyin" aria-label="切换拼音显示">显示拼音</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="reader" id="reader"></div>
+
+<button class="btn-toc" id="btnToc" aria-label="打开目录">目录</button>
+<div class="toc-overlay" id="tocOverlay"></div>
+<aside class="toc-drawer" id="tocDrawer" aria-label="目录">
+  <div class="toc-header">目录</div>
+  <ul class="toc-list" id="tocList"></ul>
+</aside>
+
+<script>
+// ── 声律启蒙全文数据 ──
+const SHENGLV = [
+  // ===== 上平·一东 =====
+  [
+    {hz:"云对雨，雪对风。晚照对晴空。", py:"yún duì yǔ, xuě duì fēng. wǎn zhào duì qíng kōng."},
+    {hz:"来鸿对去燕，宿鸟对鸣虫。", py:"lái hóng duì qù yàn, sù niǎo duì míng chóng."},
+    {hz:"三尺剑，六钧弓。岭北对江东。", py:"sān chǐ jiàn, liù jūn gōng. lǐng běi duì jiāng dōng."},
+    {hz:"人间清暑殿，天上广寒宫。", py:"rén jiān qīng shǔ diàn, tiān shàng guǎng hán gōng."},
+    {hz:"两岸晓烟杨柳绿，一园春雨杏花红。", py:"liǎng àn xiǎo yān yáng liǔ lǜ, yī yuán chūn yǔ xìng huā hóng."},
+    {hz:"两鬓风霜，途次早行之客；", py:"liǎng bìn fēng shuāng, tú cì zǎo xíng zhī kè;"},
+    {hz:"一蓑烟雨，溪边晚钓之翁。", py:"yī suō yān yǔ, xī biān wǎn diào zhī wēng."},
+    {hz:"沿对革，异对同。白叟对黄童。", py:"yán duì gé, yì duì tóng. bái sǒu duì huáng tóng."},
+    {hz:"江风对海雾，牧子对渔翁。", py:"jiāng fēng duì hǎi wù, mù zǐ duì yú wēng."},
+    {hz:"颜巷陋，阮途穷。冀北对辽东。", py:"yán xiàng lòu, ruǎn tú qióng. jì běi duì liáo dōng."},
+    {hz:"池中濯足水，门外打头风。", py:"chí zhōng zhuó zú shuǐ, mén wài dǎ tóu fēng."},
+    {hz:"梁帝讲经同泰寺，汉皇置酒未央宫。", py:"liáng dì jiǎng jīng tóng tài sì, hàn huáng zhì jiǔ wèi yāng gōng."},
+    {hz:"尘虑萦心，懒抚七弦绿绮；", py:"chén lǜ yíng xīn, lǎn fǔ qī xián lǜ qǐ;"},
+    {hz:"霜华满鬓，羞看百炼青铜。", py:"shuāng huá mǎn bìn, xiū kàn bǎi liàn qīng tóng."},
+    {hz:"贫对富，塞对通。野叟对溪童。", py:"pín duì fù, sè duì tōng. yě sǒu duì xī tóng."},
+    {hz:"鬓皤对眉绿，齿皓对唇红。", py:"bìn pó duì méi lǜ, chǐ hào duì chún hóng."},
+    {hz:"天浩浩，日融融。佩剑对弯弓。", py:"tiān hào hào, rì róng róng. pèi jiàn duì wān gōng."},
+    {hz:"半溪流水绿，千树落花红。", py:"bàn xī liú shuǐ lǜ, qiān shù luò huā hóng."},
+    {hz:"野渡燕穿杨柳雨，芳池鱼戏芰荷风。", py:"yě dù yàn chuān yáng liǔ yǔ, fāng chí yú xì jì hé fēng."},
+    {hz:"女子眉纤，额下现一弯新月；", py:"nǚ zǐ méi xiān, é xià xiàn yī wān xīn yuè;"},
+    {hz:"男儿气壮，胸中吐万丈长虹。", py:"nán ér qì zhuàng, xiōng zhōng tǔ wàn zhàng cháng hóng."},
+  ],
+  // ===== 上平·二冬 =====
+  [
+    {hz:"春对夏，秋对冬。暮鼓对晨钟。", py:"chūn duì xià, qiū duì dōng. mù gǔ duì chén zhōng."},
+    {hz:"观山对玩水，绿竹对苍松。", py:"guān shān duì wán shuǐ, lǜ zhú duì cāng sōng."},
+    {hz:"冯妇虎，叶公龙。舞蝶对鸣蛩。", py:"féng fù hǔ, yè gōng lóng. wǔ dié duì míng qióng."},
+    {hz:"衔泥双紫燕，课蜜几黄蜂。", py:"xián ní shuāng zǐ yàn, kè mì jǐ huáng fēng."},
+    {hz:"春日园中莺恰恰，秋天塞外雁雍雍。", py:"chūn rì yuán zhōng yīng qià qià, qiū tiān sài wài yàn yōng yōng."},
+    {hz:"秦岭云横，迢递八千远路；", py:"qín lǐng yún héng, tiáo dì bā qiān yuǎn lù;"},
+    {hz:"巫山雨洗，嵯峨十二危峰。", py:"wū shān yǔ xǐ, cuó é shí èr wēi fēng."},
+    {hz:"明对暗，淡对浓。上智对中庸。", py:"míng duì àn, dàn duì nóng. shàng zhì duì zhōng yōng."},
+    {hz:"镜奁对衣笥，野杵对村舂。", py:"jìng lián duì yī sì, yě chǔ duì cūn chōng."},
+    {hz:"花灼烁，草蒙茸。九夏对三冬。", py:"huā zhuó shuò, cǎo méng róng. jiǔ xià duì sān dōng."},
+    {hz:"台高名戏马，斋小号蟠龙。", py:"tái gāo míng xì mǎ, zhāi xiǎo hào pán lóng."},
+    {hz:"手擘蟹螯从毕卓，身披鹤氅自王恭。", py:"shǒu bò xiè áo cóng bì zhuó, shēn pī hè chǎng zì wáng gōng."},
+    {hz:"五老峰高，秀插云霄如玉笔；", py:"wǔ lǎo fēng gāo, xiù chā yún xiāo rú yù bǐ;"},
+    {hz:"三姑石大，响传风雨若金镛。", py:"sān gū shí dà, xiǎng chuán fēng yǔ ruò jīn yōng."},
+    {hz:"仁对义，让对恭。禹舜对羲农。", py:"rén duì yì, ràng duì gōng. yǔ shùn duì xī nóng."},
+    {hz:"雪花对云叶，芍药对芙蓉。", py:"xuě huā duì yún yè, sháo yào duì fú róng."},
+    {hz:"陈后主，汉中宗。绣虎对雕龙。", py:"chén hòu zhǔ, hàn zhōng zōng. xiù hǔ duì diāo lóng."},
+    {hz:"柳塘风淡淡，花圃月浓浓。", py:"liǔ táng fēng dàn dàn, huā pǔ yuè nóng nóng."},
+    {hz:"春日正宜朝看蝶，秋风那更夜闻蛩。", py:"chūn rì zhèng yí zhāo kàn dié, qiū fēng nǎ gèng yè wén qióng."},
+    {hz:"战士邀功，必借干戈成勇武；", py:"zhàn shì yāo gōng, bì jiè gān gē chéng yǒng wǔ;"},
+    {hz:"逸民适志，须凭诗酒养疏慵。", py:"yì mín shì zhì, xū píng shī jiǔ yǎng shū yōng."},
+  ],
+  // ===== 上平·三江 =====
+  [
+    {hz:"楼对阁，户对窗。巨海对长江。", py:"lóu duì gé, hù duì chuāng. jù hǎi duì cháng jiāng."},
+    {hz:"蓉裳对蕙帐，玉斝对银。", py:"róng cháng duì huì zhàng, yù jiǎ duì yín."},
+    {hz:"青布幔，碧油幢。宝剑对金缸。", py:"qīng bù màn, bì yóu chuáng. bǎo jiàn duì jīn gāng."},
+    {hz:"忠心安社稷，利口覆家邦。", py:"zhōng xīn ān shè jì, lì kǒu fù jiā bāng."},
+    {hz:"世祖中兴延马武，桀王失道杀龙逄。", py:"shì zǔ zhōng xīng yán mǎ wǔ, jié wáng shī dào shā lóng páng."},
+    {hz:"秋雨潇潇，熳烂黄花都满径；", py:"qiū yǔ xiāo xiāo, màn làn huáng huā dōu mǎn jìng;"},
+    {hz:"春风袅袅，扶疏绿竹正盈窗。", py:"chūn fēng niǎo niǎo, fú shū lǜ zhú zhèng yíng chuāng."},
+    {hz:"旌对旆，盖对幢。故国对他邦。", py:"jīng duì pèi, gài duì chuáng. gù guó duì tā bāng."},
+    {hz:"千山对万水，九泽对三江。", py:"qiān shān duì wàn shuǐ, jiǔ zé duì sān jiāng."},
+    {hz:"山岌岌，水淙淙。鼓振对钟撞。", py:"shān jí jí, shuǐ cóng cóng. gǔ zhèn duì zhōng zhuàng."},
+    {hz:"清风生酒舍，皓月照书窗。", py:"qīng fēng shēng jiǔ shè, hào yuè zhào shū chuāng."},
+    {hz:"阵上倒戈辛纣战，道旁系剑子婴降。", py:"zhèn shàng dǎo gē xīn zhòu zhàn, dào páng xì jiàn zǐ yīng xiáng."},
+    {hz:"夏日池塘，出没浴波鸥对对；", py:"xià rì chí táng, chū mò yù bō ōu duì duì;"},
+    {hz:"春风帘幕，往来营垒燕双双。", py:"chūn fēng lián mù, wǎng lái yíng lěi yàn shuāng shuāng."},
+    {hz:"铢对两，只对双。华岳对湘江。", py:"zhū duì liǎng, zhī duì shuāng. huà yuè duì xiāng jiāng."},
+    {hz:"朝车对禁鼓，宿火对寒缸。", py:"cháo chē duì jìn gǔ, sù huǒ duì hán gāng."},
+    {hz:"青琐闼，碧纱窗。汉社对周邦。", py:"qīng suǒ tà, bì shā chuāng. hàn shè duì zhōu bāng."},
+    {hz:"笙箫鸣细细，钟鼓响。", py:"shēng xiāo míng xì xì, zhōng gǔ xiǎng."},
+    {hz:"主簿栖鸾名有览，治中展骥姓惟庞。", py:"zhǔ bù qī luán míng yǒu lǎn, zhì zhōng zhǎn jì xìng wéi páng."},
+    {hz:"苏武牧羊，雪屡餐于北海；", py:"sū wǔ mù yáng, xuě lǚ cān yú běi hǎi;"},
+    {hz:"庄周活鲋，水必决于西江。", py:"zhuāng zhōu huó fù, shuǐ bì jué yú xī jiāng."},
+  ],
+  // ===== 上平·四支 =====
+  [
+    {hz:"茶对酒，赋对诗。燕子对莺儿。", py:"chá duì jiǔ, fù duì shī. yàn zǐ duì yīng ér."},
+    {hz:"栽花对种竹，落絮对游丝。", py:"zāi huā duì zhòng zhú, luò xù duì yóu sī."},
+    {hz:"四目颉，一足夔。鸲鹆对鹭鸶。", py:"sì mù jié, yī zú kuí. qú yù duì lù sī."},
+    {hz:"半池红菡萏，一架白荼蘼。", py:"bàn chí hóng hàn dàn, yī jià bái tú mí."},
+    {hz:"几阵秋风能应候，一犁春雨甚知时。", py:"jǐ zhèn qiū fēng néng yìng hòu, yī lí chūn yǔ shèn zhī shí."},
+    {hz:"智伯恩深，国士吞变形之炭；", py:"zhì bó ēn shēn, guó shì tūn biàn xíng zhī tàn;"},
+    {hz:"羊公德大，邑人竖堕泪之碑。", py:"yáng gōng dé dà, yì rén shù duò lèi zhī bēi."},
+    {hz:"行对止，速对迟。舞剑对围棋。", py:"xíng duì zhǐ, sù duì chí. wǔ jiàn duì wéi qí."},
+    {hz:"花笺对草字，竹简对毛锥。", py:"huā jiān duì cǎo zì, zhú jiǎn duì máo zhuī."},
+    {hz:"汾水鼎，岘山碑。虎豹对熊罴。", py:"fén shuǐ dǐng, xiàn shān bēi. hǔ bào duì xióng pí."},
+    {hz:"花开红锦绣，水漾碧琉璃。", py:"huā kāi hóng jǐn xiù, shuǐ yàng bì liú lí."},
+    {hz:"去妇因探邻舍枣，出妻为种后园葵。", py:"qù fù yīn tàn lín shè zǎo, chū qī wèi zhòng hòu yuán kuí."},
+    {hz:"笛韵和谐，仙管恰从云里降；", py:"dí yùn hé xié, xiān guǎn qià cóng yún lǐ jiàng;"},
+    {hz:"橹声咿轧，渔舟正向雪中移。", py:"lǔ shēng yī yā, yú zhōu zhèng xiàng xuě zhōng yí."},
+    {hz:"戈对甲，鼓对旗。紫燕对黄鹂。", py:"gē duì jiǎ, gǔ duì qí. zǐ yàn duì huáng lí."},
+    {hz:"梅酸对李苦，青眼对白眉。", py:"méi suān duì lǐ kǔ, qīng yǎn duì bái méi."},
+    {hz:"三弄笛，一围棋。雨打对风吹。", py:"sān nòng dí, yī wéi qí. yǔ dǎ duì fēng chuī."},
+    {hz:"海棠春睡早，杨柳昼眠迟。", py:"hǎi táng chūn shuì zǎo, yáng liǔ zhòu mián chí."},
+    {hz:"张骏曾为槐树赋，杜陵不作海棠诗。", py:"zhāng jùn céng wèi huái shù fù, dù líng bù zuò hǎi táng shī."},
+    {hz:"晋士特奇，可比一斑之豹；", py:"jìn shì tè qí, kě bǐ yī bān zhī bào;"},
+    {hz:"唐儒博识，堪为五总之龟。", py:"táng rú bó shí, kān wéi wǔ zǒng zhī guī."},
+  ],
+  // ===== 上平·五微 =====
+  [
+    {hz:"来对往，密对稀。燕舞对莺飞。", py:"lái duì wǎng, mì duì xī. yàn wǔ duì yīng fēi."},
+    {hz:"风清对月朗，露重对烟微。", py:"fēng qīng duì yuè lǎng, lù zhòng duì yān wēi."},
+    {hz:"霜菊瘦，雨梅肥。客路对渔矶。", py:"shuāng jú shòu, yǔ méi féi. kè lù duì yú jī."},
+    {hz:"晚霞舒锦绣，朝露缀珠玑。", py:"wǎn xiá shū jǐn xiù, zhāo lù zhuì zhū jī."},
+    {hz:"夏暑客思欹石枕，秋寒妇念寄边衣。", py:"xià shǔ kè sī qī shí zhěn, qiū hán fù niàn jì biān yī."},
+    {hz:"春水才深，青草岸边渔父去；", py:"chūn shuǐ cái shēn, qīng cǎo àn biān yú fǔ qù;"},
+    {hz:"夕阳半落，绿莎原上牧童归。", py:"xī yáng bàn luò, lǜ suō yuán shàng mù tóng guī."},
+    {hz:"宽对猛，是对非。服美对乘肥。", py:"kuān duì měng, shì duì fēi. fú měi duì chéng féi."},
+    {hz:"珊瑚对玳瑁，锦绣对珠玑。", py:"shān hú duì dài mào, jǐn xiù duì zhū jī."},
+    {hz:"桃灼灼，柳依依。绿暗对红稀。", py:"táo zhuó zhuó, liǔ yī yī. lǜ àn duì hóng xī."},
+    {hz:"窗前莺并语，帘外燕双飞。", py:"chuāng qián yīng bìng yǔ, lián wài yàn shuāng fēi."},
+    {hz:"汉致太平三尺剑，周臻大定一戎衣。", py:"hàn zhì tài píng sān chǐ jiàn, zhōu zhēn dà dìng yī róng yī."},
+    {hz:"吟成赏月之诗，只愁月堕；", py:"yín chéng shǎng yuè zhī shī, zhǐ chóu yuè duò;"},
+    {hz:"斟满送春之酒，惟憾春归。", py:"zhēn mǎn sòng chūn zhī jiǔ, wéi hàn chūn guī."},
+    {hz:"声对色，饱对饥。虎节对龙旗。", py:"shēng duì sè, bǎo duì jī. hǔ jié duì lóng qí."},
+    {hz:"杨花对桂叶，白简对朱衣。", py:"yáng huā duì guì yè, bái jiǎn duì zhū yī."},
+    {hz:"尨也吠，燕于飞。荡荡对巍巍。", py:"máng yě fèi, yàn yú fēi. dàng dàng duì wēi wēi."},
+    {hz:"春暄资日气，秋冷借霜威。", py:"chūn xuān zī rì qì, qiū lěng jiè shuāng wēi."},
+    {hz:"出使振威冯奉世，治民异等尹翁归。", py:"chū shǐ zhèn wēi féng fèng shì, zhì mín yì děng yǐn wēng guī."},
+    {hz:"燕我弟兄，载咏棣棠；", py:"yàn wǒ dì xiōng, zài yǒng dì táng;"},
+    {hz:"命伊将帅，为歌杨柳依依。", py:"mìng yī jiàng shuài, wèi gē yáng liǔ yī yī."},
+  ],
+  // ===== 上平·六鱼 =====
+  [
+    {hz:"无对有，实对虚。作赋对观书。", py:"wú duì yǒu, shí duì xū. zuò fù duì guān shū."},
+    {hz:"绿窗对朱户，宝马对香车。", py:"lǜ chuāng duì zhū hù, bǎo mǎ duì xiāng jū."},
+    {hz:"伯乐马，浩然驴。弋雁对求鱼。", py:"bó lè mǎ, hào rán lǘ. yì yàn duì qiú yú."},
+    {hz:"分金齐鲍叔，奉璧蔺相如。", py:"fēn jīn qí bào shū, fèng bì lìn xiāng rú."},
+    {hz:"掷地金声孙绰赋，回文锦字窦滔书。", py:"zhì dì jīn shēng sūn chuò fù, huí wén jǐn zì dòu tāo shū."},
+    {hz:"未遇殷宗，胥靡困傅岩之筑；", py:"wèi yù yīn zōng, xū mí kùn fù yán zhī zhù;"},
+    {hz:"既逢周后，太公舍渭水之渔。", py:"jì féng zhōu hòu, tài gōng shě wèi shuǐ zhī yú."},
+    {hz:"终对始，疾对徐。短褐对华裾。", py:"zhōng duì shǐ, jí duì xú. duǎn hè duì huá jū."},
+    {hz:"六朝对三国，天禄对石渠。", py:"liù cháo duì sān guó, tiān lù duì shí qú."},
+    {hz:"千字策，八行书。有若对相如。", py:"qiān zì cè, bā háng shū. yǒu ruò duì xiāng rú."},
+    {hz:"花残无戏蝶，藻密有潜鱼。", py:"huā cán wú xì dié, zǎo mì yǒu qián yú."},
+    {hz:"落叶舞风高复下，小荷浮水卷还舒。", py:"luò yè wǔ fēng gāo fù xià, xiǎo hé fú shuǐ juǎn huán shū."},
+    {hz:"爱见人长，共服宣尼休假盖；", py:"ài xiàn rén cháng, gòng fú xuān ní xiū jiǎ gài;"},
+    {hz:"恐彰己吝，谁知阮裕竟焚车。", py:"kǒng zhāng jǐ lìn, shéi zhī ruǎn yù jìng fén jū."},
+    {hz:"麟对凤，鳖对鱼。内史对中书。", py:"lín duì fèng, biē duì yú. nèi shǐ duì zhōng shū."},
+    {hz:"犁锄对耒耜，畎浍对郊墟。", py:"lí chú duì lěi sì, quǎn kuài duì jiāo xū."},
+    {hz:"犀角带，象牙梳。驷马对安车。", py:"xī jiǎo dài, xiàng yá shū. sì mǎ duì ān jū."},
+    {hz:"青衣能报赦，黄耳解传书。", py:"qīng yī néng bào shè, huáng ěr jiě chuán shū."},
+    {hz:"庭畔有人持短剑，门前无客曳长裾。", py:"tíng pàn yǒu rén chí duǎn jiàn, mén qián wú kè yè cháng jū."},
+    {hz:"波浪拍船，骇舟人之水宿；", py:"bō làng pāi chuán, hài zhōu rén zhī shuǐ sù;"},
+    {hz:"峰峦绕舍，乐隐者之山居。", py:"fēng luán rào shè, lè yǐn zhě zhī shān jū."},
+  ],
+  // ===== 上平·七虞 =====
+  [
+    {hz:"金对玉，宝对珠。玉兔对金乌。", py:"jīn duì yù, bǎo duì zhū. yù tù duì jīn wū."},
+    {hz:"孤舟对短棹，一雁对双凫。", py:"gū zhōu duì duǎn zhào, yī yàn duì shuāng fú."},
+    {hz:"横醉眼，捻吟须。李白对杨朱。", py:"héng zuì yǎn, niǎn yín xū. lǐ bái duì yáng zhū."},
+    {hz:"秋霜多过雁，夜月有啼乌。", py:"qiū shuāng duō guò yàn, yè yuè yǒu tí wū."},
+    {hz:"日暖园林花易赏，雪寒村舍酒难沽。", py:"rì nuǎn yuán lín huā yì shǎng, xuě hán cūn shè jiǔ nán gū."},
+    {hz:"人处岭南，善探巨象口中齿；", py:"rén chǔ lǐng nán, shàn tàn jù xiàng kǒu zhōng chǐ;"},
+    {hz:"客居江左，偶夺骊龙颔下珠。", py:"kè jū jiāng zuǒ, ǒu duó lí lóng hàn xià zhū."},
+    {hz:"贤对圣，智对愚。傅粉对施朱。", py:"xián duì shèng, zhì duì yú. fù fěn duì shī zhū."},
+    {hz:"名缰对利锁，挈榼对提壶。", py:"míng jiāng duì lì suǒ, qiè kē duì tí hú."},
+    {hz:"鸠哺子，燕调雏。石帐对郇厨。", py:"jiū bǔ zǐ, yàn tiáo chú. shí zhàng duì xún chú."},
+    {hz:"烟轻笼岸柳，风急撼庭梧。", py:"yān qīng lǒng àn liǔ, fēng jí hàn tíng wú."},
+    {hz:"眼一方端石砚，龙涎三炷博山炉。", py:"yǎn yī fāng duān shí yàn, lóng xián sān zhù bó shān lú."},
+    {hz:"曲沼鱼多，可使渔人结网；", py:"qū zhǎo yú duō, kě shǐ yú rén jié wǎng;"},
+    {hz:"平田兔少，漫劳耕者守株。", py:"píng tián tù shǎo, màn láo gēng zhě shǒu zhū."},
+    {hz:"秦对赵，越对吴。钓客对耕夫。", py:"qín duì zhào, yuè duì wú. diào kè duì gēng fū."},
+    {hz:"箕裘对杖履，杞梓对桑榆。", py:"jī qiú duì zhàng lǚ, qǐ zǐ duì sāng yú."},
+    {hz:"天欲晓，日将晡。狡兔对妖狐。", py:"tiān yù xiǎo, rì jiāng bū. jiǎo tù duì yāo hú."},
+    {hz:"读书甘刺股，煮粥惜焚须。", py:"dú shū gān cì gǔ, zhǔ zhōu xī fén xū."},
+    {hz:"韩信武能平四海，左思文足赋三都。", py:"hán xìn wǔ néng píng sì hǎi, zuǒ sī wén zú fù sān dū."},
+    {hz:"嘉遁幽人，适志竹篱茅舍；", py:"jiā dùn yōu rén, shì zhì zhú lí máo shè;"},
+    {hz:"胜游公子，玩情柳陌花衢。", py:"shèng yóu gōng zǐ, wán qíng liǔ mò huā qú."},
+  ],
+  // ===== 上平·八齐 =====
+  [
+    {hz:"岩对岫，涧对溪。远岸对危堤。", py:"yán duì xiù, jiàn duì xī. yuǎn àn duì wēi dī."},
+    {hz:"鹤长对凫短，水雁对山鸡。", py:"hè cháng duì fú duǎn, shuǐ yàn duì shān jī."},
+    {hz:"星拱北，月流西。汉露对汤霓。", py:"xīng gǒng běi, yuè liú xī. hàn lù duì tāng ní."},
+    {hz:"桃林牛已放，虞坂马长嘶。", py:"táo lín niú yǐ fàng, yú bǎn mǎ cháng sī."},
+    {hz:"叔侄去官闻广受，弟兄让国有夷齐。", py:"shū zhí qù guān wén guǎng shòu, dì xiōng ràng guó yǒu yí qí."},
+    {hz:"三月春浓，芍药丛中蝴蝶舞；", py:"sān yuè chūn nóng, sháo yào cóng zhōng hú dié wǔ;"},
+    {hz:"五更天晓，海棠枝上子规啼。", py:"wǔ gēng tiān xiǎo, hǎi táng zhī shàng zǐ guī tí."},
+    {hz:"云对雨，水对泥。白璧对玄圭。", py:"yún duì yǔ, shuǐ duì ní. bái bì duì xuán guī."},
+    {hz:"献瓜对投李，禁鼓对征鼙。", py:"xiàn guā duì tóu lǐ, jìn gǔ duì zhēng pí."},
+    {hz:"徐稚榻，鲁班梯。凤翥对鸾栖。", py:"xú zhì tà, lǔ bān tī. fèng zhù duì luán qī."},
+    {hz:"有官清似水，无客醉如泥。", py:"yǒu guān qīng sì shuǐ, wú kè zuì rú ní."},
+    {hz:"截发惟闻陶侃母，断机只有乐羊妻。", py:"jié fà wéi wén táo kǎn mǔ, duàn jī zhǐ yǒu yuè yáng qī."},
+    {hz:"秋望佳人，目送楼头千里雁；", py:"qiū wàng jiā rén, mù sòng lóu tóu qiān lǐ yàn;"},
+    {hz:"早行远客，梦惊枕上五更鸡。", py:"zǎo xíng yuǎn kè, mèng jīng zhěn shàng wǔ gēng jī."},
+    {hz:"熊对虎，象对犀。霹雳对虹霓。", py:"xióng duì hǔ, xiàng duì xī. pī lì duì hóng ní."},
+    {hz:"杜鹃对孔雀，桂岭对梅溪。", py:"dù juān duì kǒng què, guì lǐng duì méi xī."},
+    {hz:"萧史凤，宋宗鸡。远近对高低。", py:"xiāo shǐ fèng, sòng zōng jī. yuǎn jìn duì gāo dī."},
+    {hz:"水寒鱼不跃，林茂鸟频栖。", py:"shuǐ hán yú bù yuè, lín mào niǎo pín qī."},
+    {hz:"杨柳和烟彭泽县，桃花流水武陵溪。", py:"yáng liǔ hè yān péng zé xiàn, táo huā liú shuǐ wǔ líng xī."},
+    {hz:"公子追欢，闲骤玉骢游绮陌；", py:"gōng zǐ zhuī huān, xián zhòu yù cōng yóu qǐ mò;"},
+    {hz:"佳人倦绣，闷欹珊枕掩香闺。", py:"jiā rén juàn xiù, mèn yǐ shān zhěn yǎn xiāng guī."},
+  ],
+  // ===== 上平·九佳 =====
+  [
+    {hz:"河对海，汉对淮。赤岸对朱崖。", py:"hé duì hǎi, hàn duì huái. chì àn duì zhū yá."},
+    {hz:"鹭飞对鱼跃，宝钿对金钗。", py:"lù fēi duì yú yuè, bǎo diàn duì jīn chāi."},
+    {hz:"鱼圉圉，鸟喈喈。草履对芒鞋。", py:"yú yǔ yǔ, niǎo jiē jiē. cǎo lǚ duì máng xié."},
+    {hz:"古贤崇笃厚，时辈喜诙谐。", py:"gǔ xián chóng dǔ hòu, shí bèi xǐ huī xié."},
+    {hz:"孟训文公谈性善，颜师孔子问心斋。", py:"mèng xùn wén gōng tán xìng shàn, yán shī kǒng zǐ wèn xīn zhāi."},
+    {hz:"缓抚琴弦，像流莺而并语；", py:"huǎn fǔ qín xián, xiàng liú yīng ér bìng yǔ;"},
+    {hz:"斜排筝柱，类过雁之相挨。", py:"xié pái zhēng zhù, lèi guò yàn zhī xiāng āi."},
+    {hz:"丰对俭，等对差。布袄对荆钗。", py:"fēng duì jiǎn, děng duì chā. bù ǎo duì jīng chāi."},
+    {hz:"雁行对鱼阵，榆塞对兰崖。", py:"yàn háng duì yú zhèn, yú sài duì lán yá."},
+    {hz:"挑荠女，采莲娃。菊径对苔阶。", py:"tiāo jì nǚ, cǎi lián wá. jú jìng duì tái jiē."},
+    {hz:"诗成六义备，乐奏八音谐。", py:"shī chéng liù yì bèi, yuè zòu bā yīn xié."},
+    {hz:"造律吏哀秦法酷，知音人说郑声哇。", py:"zào lǜ lì āi qín fǎ kù, zhī yīn rén shuō zhèng shēng wā."},
+    {hz:"天欲飞霜，塞上有鸿行已过；", py:"tiān yù fēi shuāng, sài shàng yǒu hóng háng yǐ guò;"},
+    {hz:"云将作雨，庭前多蚁阵先排。", py:"yún jiāng zuò yǔ, tíng qián duō yǐ zhèn xiān pái."},
+    {hz:"城对市，巷对街。破屋对空阶。", py:"chéng duì shì, xiàng duì jiē. pò wū duì kōng jiē."},
+    {hz:"桃枝对桂叶，砌蚓对墙蜗。", py:"táo zhī duì guì yè, qì yǐn duì qiáng wō."},
+    {hz:"梅可望，橘堪怀。季路对高柴。", py:"méi kě wàng, jú kān huái. jì lù duì gāo chái."},
+    {hz:"花藏沽酒市，竹映读书斋。", py:"huā cáng gū jiǔ shì, zhú yìng dú shū zhāi."},
+    {hz:"马首不容孤竹扣，车轮终就洛阳埋。", py:"mǎ shǒu bù róng gū zhú kòu, chē lún zhōng jiù luò yáng mái."},
+    {hz:"朝宰锦衣，贵束乌犀之带；", py:"cháo zǎi jǐn yī, guì shù wū xī zhī dài;"},
+    {hz:"宫人宝髻，宜簪白燕之钗。", py:"gōng rén bǎo jì, yí zān bái yàn zhī chāi."},
+  ],
+  // ===== 上平·十灰 =====
+  [
+    {hz:"增对损，闭对开。碧草对苍苔。", py:"zēng duì sǔn, bì duì kāi. bì cǎo duì cāng tái."},
+    {hz:"书签对笔架，两曜对三台。", py:"shū qiān duì bǐ jià, liǎng yào duì sān tái."},
+    {hz:"周召虎，宋桓魋。阆苑对蓬莱。", py:"zhōu shào hǔ, sòng huán tuí. làng yuàn duì péng lái."},
+    {hz:"薰风生殿阁，皓月照楼台。", py:"xūn fēng shēng diàn gé, hào yuè zhào lóu tái."},
+    {hz:"却马汉文思罢献，吞蝗唐太冀移灾。", py:"què mǎ hàn wén sī bà xiàn, tūn huáng táng tài jì yí zāi."},
+    {hz:"照耀八荒，赫赫丽天秋日；", py:"zhào yào bā huāng, hè hè lì tiān qiū rì;"},
+    {hz:"震惊百里，轰轰出地春雷。", py:"zhèn jīng bǎi lǐ, hōng hōng chū dì chūn léi."},
+    {hz:"沙对水，火对灰。雨雪对风雷。", py:"shā duì shuǐ, huǒ duì huī. yǔ xuě duì fēng léi."},
+    {hz:"书淫对传癖，水浒对岩隈。", py:"shū yín duì zhuàn pǐ, shuǐ hǔ duì yán wēi."},
+    {hz:"歌旧曲，酿新醅。舞馆对歌台。", py:"gē jiù qǔ, niàng xīn pēi. wǔ guǎn duì gē tái."},
+    {hz:"春棠经雨放，秋菊傲霜开。", py:"chūn táng jīng yǔ fàng, qiū jú ào shuāng kāi."},
+    {hz:"作酒固难忘曲糵，调羹必要用盐梅。", py:"zuò jiǔ gù nán wàng qū niè, tiáo gēng bì yào yòng yán méi."},
+    {hz:"月满庾楼，据胡床而可玩；", py:"yuè mǎn yǔ lóu, jù hú chuáng ér kě wán;"},
+    {hz:"花开唐苑，轰羯鼓以奚催。", py:"huā kāi táng yuàn, hōng jié gǔ yǐ xī cuī."},
+    {hz:"休对咎，福对灾。象箸对犀杯。", py:"xiū duì jiù, fú duì zāi. xiàng zhù duì xī bēi."},
+    {hz:"宫花对御柳，峻阁对高台。", py:"gōng huā duì yù liǔ, jùn gé duì gāo tái."},
+    {hz:"花蓓蕾，草根荄。剔藓对剜苔。", py:"huā bèi lěi, cǎo gēn gāi. tī xiǎn duì wān tái."},
+    {hz:"雨前庭蚁闹，霜后阵鸿哀。", py:"yǔ qián tíng yǐ nào, shuāng hòu zhèn hóng āi."},
+    {hz:"元亮南窗今日傲，孙弘东阁几时开。", py:"yuán liàng nán chuāng jīn rì ào, sūn hóng dōng gé jǐ shí kāi."},
+    {hz:"平展青茵，野外茸茸软草；", py:"píng zhǎn qīng yīn, yě wài róng róng ruǎn cǎo;"},
+    {hz:"高张翠幄，庭前郁郁凉槐。", py:"gāo zhāng cuì wò, tíng qián yù yù liáng huái."},
+  ],
+  // ===== 上平·十一真 =====
+  [
+    {hz:"邪对正，假对真。獬豸对麒麟。", py:"xié duì zhèng, jiǎ duì zhēn. xiè zhì duì qí lín."},
+    {hz:"韩卢对苏雁，陆橘对庄椿。", py:"hán lú duì sū yàn, lù jú duì zhuāng chūn."},
+    {hz:"韩五鬼，李三人。北魏对西秦。", py:"hán wǔ guǐ, lǐ sān rén. běi wèi duì xī qín."},
+    {hz:"蝉鸣哀暮夏，莺啭怨残春。", py:"chán míng āi mù xià, yīng zhuàn yuàn cán chūn."},
+    {hz:"野烧焰腾红烁烁，溪流波皱碧粼粼。", py:"yě shāo yàn téng hóng shuò shuò, xī liú bō zhòu bì lín lín."},
+    {hz:"行无踪，居无庐，颂成酒德；", py:"xíng wú zōng, jū wú lú, sòng chéng jiǔ dé;"},
+    {hz:"动有时，藏有节，论著钱神。", py:"dòng yǒu shí, cáng yǒu jié, lùn zhù qián shén."},
+    {hz:"哀对乐，富对贫。好友对嘉宾。", py:"āi duì lè, fù duì pín. hǎo yǒu duì jiā bīn."},
+    {hz:"弹冠对结绶，白日对青春。", py:"tán guān duì jié shòu, bái rì duì qīng chūn."},
+    {hz:"金翡翠，玉麒麟。虎爪对龙鳞。", py:"jīn fěi cuì, yù qí lín. hǔ zhǎo duì lóng lín."},
+    {hz:"柳塘生细浪，花径起香尘。", py:"liǔ táng shēng xì làng, huā jìng qǐ xiāng chén."},
+    {hz:"闲爱登山穿谢屐，醉思漉酒脱陶巾。", py:"xián ài dēng shān chuān xiè jī, zuì sī lù jiǔ tuō táo jīn."},
+    {hz:"雪冷霜严，倚槛松筠同傲岁；", py:"xuě lěng shuāng yán, yǐ jiàn sōng yún tóng ào suì;"},
+    {hz:"日迟风暖，满园花柳各争春。", py:"rì chí fēng nuǎn, mǎn yuán huā liǔ gè zhēng chūn."},
+    {hz:"香对火，炭对薪。日观对天津。", py:"xiāng duì huǒ, tàn duì xīn. rì guàn duì tiān jīn."},
+    {hz:"禅心对道眼，野妇对宫嫔。", py:"chán xīn duì dào yǎn, yě fù duì gōng pín."},
+    {hz:"仁无敌，德有邻。万石对千钧。", py:"rén wú dí, dé yǒu lín. wàn dàn duì qiān jūn."},
+    {hz:"滔滔三峡水，冉冉一溪冰。", py:"tāo tāo sān xiá shuǐ, rǎn rǎn yī xī bīng."},
+    {hz:"充国功名当画阁，子张言行贵书绅。", py:"chōng guó gōng míng dāng huà gé, zǐ zhāng yán xíng guì shū shēn."},
+    {hz:"笃志诗书，思入圣贤绝域；", py:"dǔ zhì shī shū, sī rù shèng xián jué yù;"},
+    {hz:"忘情官爵，羞沾名利纤尘。", py:"wàng qíng guān jué, xiū zhān míng lì xiān chén."},
+  ],
+  // ===== 上平·十二文 =====
+  [
+    {hz:"家对国，武对文。四辅对三军。", py:"jiā duì guó, wǔ duì wén. sì fǔ duì sān jūn."},
+    {hz:"九经对三史，菊馥对兰芬。", py:"jiǔ jīng duì sān shǐ, jú fù duì lán fēn."},
+    {hz:"歌北鄙，咏南薰。迩听对遥闻。", py:"gē běi bǐ, yǒng nán xūn. ěr tīng duì yáo wén."},
+    {hz:"召公周太保，李广汉将军。", py:"shào gōng zhōu tài bǎo, lǐ guǎng hàn jiāng jūn."},
+    {hz:"闻化蜀民皆草偃，争权晋土已瓜分。", py:"wén huà shǔ mín jiē cǎo yǎn, zhēng quán jìn tǔ yǐ guā fēn."},
+    {hz:"巫峡夜深，猿啸苦哀巴地月；", py:"wū xiá yè shēn, yuán xiào kǔ āi bā dì yuè;"},
+    {hz:"衡峰秋早，雁飞高贴楚天云。", py:"héng fēng qiū zǎo, yàn fēi gāo tiē chǔ tiān yún."},
+    {hz:"欹对正，见对闻。偃武对修文。", py:"qī duì zhèng, jiàn duì wén. yǎn wǔ duì xiū wén."},
+    {hz:"羊车对鹤驾，朝旭对晚曛。", py:"yáng chē duì hè jià, zhāo xù duì wǎn xūn."},
+    {hz:"花有艳，竹成文。马燧对羊欣。", py:"huā yǒu yàn, zhú chéng wén. mǎ suì duì yáng xīn."},
+    {hz:"山中梁宰相，树下汉将军。", py:"shān zhōng liáng zǎi xiàng, shù xià hàn jiāng jūn."},
+    {hz:"施帐解围嘉道韫，当垆沽酒叹文君。", py:"shī zhàng jiě wéi jiā dào yùn, dāng lú gū jiǔ tàn wén jūn."},
+    {hz:"好景有期，北岭几枝梅似雪；", py:"hǎo jǐng yǒu qī, běi lǐng jǐ zhī méi sì xuě;"},
+    {hz:"丰年先兆，西郊千顷稼如云。", py:"fēng nián xiān zhào, xī jiāo qiān qǐng jià rú yún."},
+    {hz:"尧对舜，夏对殷。蔡茂对刘。", py:"yáo duì shùn, xià duì yīn. cài mào duì liú."},
+    {hz:"山明对水秀，五典对三坟。", py:"shān míng duì shuǐ xiù, wǔ diǎn duì sān fén."},
+    {hz:"唐李杜，晋机云。事父对忠君。", py:"táng lǐ dù, jìn jī yún. shì fù duì zhōng jūn."},
+    {hz:"雨晴鸠唤妇，霜冷雁呼群。", py:"yǔ qíng jiū huàn fù, shuāng lěng yàn hū qún."},
+    {hz:"酒量洪深周仆射，诗才俊逸鲍参军。", py:"jiǔ liàng hóng shēn zhōu pú yè, shī cái jùn yì bào cān jūn."},
+    {hz:"鸟翼长随，凤兮洵众禽长；", py:"niǎo yì cháng suí, fèng xī xún zhòng qín zhǎng;"},
+    {hz:"狐威不假，虎也真百兽尊。", py:"hú wēi bù jiǎ, hǔ yě zhēn bǎi shòu zūn."},
+  ],
+  // ===== 上平·十三元 =====
+  [
+    {hz:"幽对显，寂对喧。柳岸对桃源。", py:"yōu duì xiǎn, jì duì xuān. liǔ àn duì táo yuán."},
+    {hz:"莺朋对燕友，早暮对寒暄。", py:"yīng péng duì yàn yǒu, zǎo mù duì hán xuān."},
+    {hz:"鱼跃沼，鹤乘轩。醉胆对吟魂。", py:"yú yuè zhǎo, hè chéng xuān. zuì dǎn duì yín hún."},
+    {hz:"轻尘生范甑，积雪拥袁门。", py:"qīng chén shēng fàn zèng, jī xuě yōng yuán mén."},
+    {hz:"缕缕轻烟芳草渡，丝丝微雨杏花村。", py:"lǚ lǚ qīng yān fāng cǎo dù, sī sī wēi yǔ xìng huā cūn."},
+    {hz:"诣阙王通，献太平十二策；", py:"yì què wáng tōng, xiàn tài píng shí èr cè;"},
+    {hz:"出关老子，著道德五千言。", py:"chū guān lǎo zǐ, zhù dào dé wǔ qiān yán."},
+    {hz:"儿对女，子对孙。药圃对花村。", py:"ér duì nǚ, zǐ duì sūn. yào pǔ duì huā cūn."},
+    {hz:"高楼对邃阁，赤豹对玄猿。", py:"gāo lóu duì suì gé, chì bào duì xuán yuán."},
+    {hz:"妃子骑，夫人轩。旷野对平原。", py:"fēi zǐ jì, fū rén xuān. kuàng yě duì píng yuán."},
+    {hz:"匏巴能鼓瑟，伯氏善吹埙。", py:"páo bā néng gǔ sè, bó shì shàn chuī xūn."},
+    {hz:"馥馥早梅思驿使，萋萋芳草怨王孙。", py:"fù fù zǎo méi sī yì shǐ, qī qī fāng cǎo yuàn wáng sūn."},
+    {hz:"秋夕月明，苏子黄岗游绝壁；", py:"qiū xī yuè míng, sū zǐ huáng gāng yóu jué bì;"},
+    {hz:"春朝花发，石家金谷启芳园。", py:"chūn zhāo huā fā, shí jiā jīn gǔ qǐ fāng yuán."},
+    {hz:"歌对舞，德对恩。犬马对鸡豚。", py:"gē duì wǔ, dé duì ēn. quǎn mǎ duì jī tún."},
+    {hz:"龙池对凤沼，雨骤对云屯。", py:"lóng chí duì fèng zhǎo, yǔ zhòu duì yún tún."},
+    {hz:"刘向阁，李膺门。唳鹤对啼猿。", py:"liú xiàng gé, lǐ yīng mén. lì hè duì tí yuán."},
+    {hz:"柳摇春白昼，梅弄月黄昏。", py:"liǔ yáo chūn bái zhòu, méi nòng yuè huáng hūn."},
+    {hz:"岁冷松筠皆有节，春暄桃李本无言。", py:"suì lěng sōng yún jiē yǒu jié, chūn xuān táo lǐ běn wú yán."},
+    {hz:"噪晚齐蝉，岁岁秋来泣恨；", py:"zào wǎn qí chán, suì suì qiū lái qì hèn;"},
+    {hz:"啼宵蜀鸟，年年春去伤魂。", py:"tí xiāo shǔ niǎo, nián nián chūn qù shāng hún."},
+  ],
+  // ===== 上平·十四寒 =====
+  [
+    {hz:"多对少，易对难。虎踞对龙蟠。", py:"duō duì shǎo, yì duì nán. hǔ jù duì lóng pán."},
+    {hz:"龙舟对凤辇，白鹤对青鸾。", py:"lóng zhōu duì fèng niǎn, bái hè duì qīng luán."},
+    {hz:"风淅淅，露。绣毂对雕鞍。", py:"fēng xī xī, lù. xiù gǔ duì diāo ān."},
+    {hz:"鱼游荷叶沼，鹭立蓼花滩。", py:"yú yóu hé yè zhǎo, lù lì liǎo huā tān."},
+    {hz:"有酒阮貂奚用解，无鱼冯铗必须弹。", py:"yǒu jiǔ ruǎn diāo xī yòng jiě, wú yú féng jiá bì xū tán."},
+    {hz:"丁固梦松，柯叶忽然生腹上；", py:"dīng gù mèng sōng, kē yè hū rán shēng fù shàng;"},
+    {hz:"文郎画竹，枝梢倏尔长毫端。", py:"wén láng huà zhú, zhī shāo shū ěr zhǎng háo duān."},
+    {hz:"寒对暑，湿对干。鲁隐对齐桓。", py:"hán duì shǔ, shī duì gān. lǔ yǐn duì qí huán."},
+    {hz:"寒毡对暖席，夜饮对晨餐。", py:"hán zhān duì nuǎn xí, yè yǐn duì chén cān."},
+    {hz:"叔子带，仲由冠。郏鄏对邯郸。", py:"shū zǐ dài, zhòng yóu guān. jiá rǔ duì hán dān."},
+    {hz:"嘉禾忧夏旱，衰柳耐秋寒。", py:"jiā hé yōu xià hàn, shuāi liǔ nài qiū hán."},
+    {hz:"杨柳绿遮元亮宅，杏花红映仲尼坛。", py:"yáng liǔ lǜ zhē yuán liàng zhái, xìng huā hóng yìng zhòng ní tán."},
+    {hz:"江水流长，环绕似青罗带；", py:"jiāng shuǐ liú cháng, huán rào sì qīng luó dài;"},
+    {hz:"海蟾轮满，澄明如白玉盘。", py:"hǎi chán lún mǎn, chéng míng rú bái yù pán."},
+    {hz:"横对竖，窄对宽。黑志对弹丸。", py:"héng duì shù, zhǎi duì kuān. hēi zhì duì dàn wán."},
+    {hz:"朱帘对画栋，彩槛对雕栏。", py:"zhū lián duì huà dòng, cǎi jiàn duì diāo lán."},
+    {hz:"春既老，夜将阑。百辟对千官。", py:"chūn jì lǎo, yè jiāng lán. bǎi bì duì qiān guān."},
+    {hz:"怀仁称足足，抱义美般般。", py:"huái rén chēng zú zú, bào yì měi bān bān."},
+    {hz:"好马君王曾市骨，食猪处士仅思肝。", py:"hào mǎ jūn wáng céng shì gǔ, shí zhū chǔ shì jǐn sī gān."},
+    {hz:"世仰双仙，元礼舟中携郭泰；", py:"shì yǎng shuāng xiān, yuán lǐ zhōu zhōng xié guō tài;"},
+    {hz:"人称连璧，夏侯车上并潘安。", py:"rén chēng lián bì, xià hóu chē shàng bìng pān ān."},
+  ],
+  // ===== 上平·十五删 =====
+  [
+    {hz:"兴对废，附对攀。露草对霜菅。", py:"xīng duì fèi, fù duì pān. lù cǎo duì shuāng jiān."},
+    {hz:"歌廉对借寇，习孔对希颜。", py:"gē lián duì jiè kòu, xí kǒng duì xī yán."},
+    {hz:"山垒垒，水潺潺。奉璧对探镮。", py:"shān lěi lěi, shuǐ chán chán. fèng bì duì tàn huán."},
+    {hz:"礼由公旦作，诗本仲尼删。", py:"lǐ yóu gōng dàn zuò, shī běn zhòng ní shān."},
+    {hz:"驴困客方经灞水，鸡鸣人已出函关。", py:"lǘ kùn kè fāng jīng bà shuǐ, jī míng rén yǐ chū hán guān."},
+    {hz:"几夜霜飞，已有苍鸿辞北塞；", py:"jǐ yè shuāng fēi, yǐ yǒu cāng hóng cí běi sài;"},
+    {hz:"数朝雾暗，岂无玄豹隐南山。", py:"shù zhāo wù àn, qǐ wú xuán bào yǐn nán shān."},
+    {hz:"犹对尚，侈对悭。雾髻对烟鬟。", py:"yóu duì shàng, chǐ duì qiān. wù jì duì yān huán."},
+    {hz:"莺啼对鹊噪，独鹤对双鹇。", py:"yīng tí duì què zào, dú hè duì shuāng xián."},
+    {hz:"黄牛峡，金马山。结草对衔环。", py:"huáng niú xiá, jīn mǎ shān. jié cǎo duì xián huán."},
+    {hz:"昆山惟玉集，合浦有珠还。", py:"kūn shān wéi yù jí, hé pǔ yǒu zhū huán."},
+    {hz:"阮籍旧能为眼白，老莱新爱着衣斑。", py:"ruǎn jí jiù néng wéi yǎn bái, lǎo lái xīn ài zhuó yī bān."},
+    {hz:"栖迟避世人，草衣木食；", py:"qī chí bì shì rén, cǎo yī mù shí;"},
+    {hz:"窈窕倾城女，云鬓花颜。", py:"yǎo tiǎo qīng chéng nǚ, yún bìn huā yán."},
+    {hz:"姚对宋，柳对颜。赏善对惩奸。", py:"yáo duì sòng, liǔ duì yán. shǎng shàn duì chéng jiān."},
+    {hz:"愁中对梦里，巧慧对痴顽。", py:"chóu zhōng duì mèng lǐ, qiǎo huì duì chī wán."},
+    {hz:"孔北海，谢东山。使越对征蛮。", py:"kǒng běi hǎi, xiè dōng shān. shǐ yuè duì zhēng mán."},
+    {hz:"淫声闻濮上，离曲听阳关。", py:"yín shēng wén pú shàng, lí qǔ tīng yáng guān."},
+    {hz:"骁将袍披仁贵白，小儿衣着老莱斑。", py:"xiāo jiàng páo pī rén guì bái, xiǎo ér yī zhuó lǎo lái bān."},
+    {hz:"茅舍无人，难却尘埃生榻上；", py:"máo shè wú rén, nán què chén āi shēng tà shàng;"},
+    {hz:"竹亭有客，尚留风月在窗间。", py:"zhú tíng yǒu kè, shàng liú fēng yuè zài chuāng jiān."},
+  ],
+  // ===== 下平·一先 =====
+  [
+    {hz:"晴对雨，地对天。天地对山川。", py:"qíng duì yǔ, dì duì tiān. tiān dì duì shān chuān."},
+    {hz:"山川对草木，赤壁对青田。", py:"shān chuān duì cǎo mù, chì bì duì qīng tián."},
+    {hz:"郏鄏鼎，武城弦。木笔对苔钱。", py:"jiá rǔ dǐng, wǔ chéng xián. mù bǐ duì tái qián."},
+    {hz:"金城三月柳，玉井九秋莲。", py:"jīn chéng sān yuè liǔ, yù jǐng jiǔ qiū lián."},
+    {hz:"何处春朝风景好，谁家秋夜月华圆。", py:"hé chù chūn zhāo fēng jǐng hǎo, shéi jiā qiū yè yuè huá yuán."},
+    {hz:"珠缀花梢，千点蔷薇香露；", py:"zhū zhuì huā shāo, qiān diǎn qiáng wēi xiāng lù;"},
+    {hz:"练横树杪，几丝杨柳残烟。", py:"liàn héng shù miǎo, jǐ sī yáng liǔ cán yān."},
+    {hz:"前对后，后对先。众丑对孤妍。", py:"qián duì hòu, hòu duì xiān. zhòng chǒu duì gū yán."},
+    {hz:"莺簧对蝶板，虎穴对龙渊。", py:"yīng huáng duì dié bǎn, hǔ xué duì lóng yuān."},
+    {hz:"击石磬，观韦编。鼠目对鸢肩。", py:"jī shí qìng, guān wéi biān. shǔ mù duì yuān jiān."},
+    {hz:"春园花柳地，秋沼芰荷天。", py:"chūn yuán huā liǔ dì, qiū zhǎo jì hé tiān."},
+    {hz:"白羽频挥闲客坐，乌纱半坠醉翁眠。", py:"bái yǔ pín huī xián kè zuò, wū shā bàn zhuì zuì wēng mián."},
+    {hz:"野店几家，羊角风摇沽酒旆；", py:"yě diàn jǐ jiā, yáng jiǎo fēng yáo gū jiǔ pèi;"},
+    {hz:"长川一带，鸭头波泛卖鱼船。", py:"cháng chuān yī dài, yā tóu bō fàn mài yú chuán."},
+    {hz:"离对坎，震对乾。一日对千年。", py:"lí duì kǎn, zhèn duì qián. yī rì duì qiān nián."},
+    {hz:"尧天对舜日，蜀水对秦川。", py:"yáo tiān duì shùn rì, shǔ shuǐ duì qín chuān."},
+    {hz:"苏武节，郑虔毡。涧壑对林泉。", py:"sū wǔ jié, zhèng qián zhān. jiàn hè duì lín quán."},
+    {hz:"挥戈能退日，持管莫窥天。", py:"huī gē néng tuì rì, chí guǎn mò kuī tiān."},
+    {hz:"寒食芳辰花烂熳，中秋佳节月婵娟。", py:"hán shí fāng chén huā làn màn, zhōng qiū jiā jié yuè chán juān."},
+    {hz:"梦里荣华，飘忽枕中之客；", py:"mèng lǐ róng huá, piāo hū zhěn zhōng zhī kè;"},
+    {hz:"壶中日月，安闲市上之仙。", py:"hú zhōng rì yuè, ān xián shì shàng zhī xiān."},
+  ],
+  // ===== 下平·二萧 =====
+  [
+    {hz:"恭对慢，吝对骄。水远对山遥。", py:"gōng duì màn, lìn duì jiāo. shuǐ yuǎn duì shān yáo."},
+    {hz:"松轩对竹槛，雪赋对风谣。", py:"sōng xuān duì zhú jiàn, xuě fù duì fēng yáo."},
+    {hz:"乘五马，贯双雕。烛灭对香消。", py:"chéng wǔ mǎ, guàn shuāng diāo. zhú miè duì xiāng xiāo."},
+    {hz:"明蟾常彻夜，骤雨不终朝。", py:"míng chán cháng chè yè, zhòu yǔ bù zhōng zhāo."},
+    {hz:"楼阁天凉风飒飒，关河地隔雨潇潇。", py:"lóu gé tiān liáng fēng sà sà, guān hé dì gé yǔ xiāo xiāo."},
+    {hz:"几点鹭鸶，日暮常飞红蓼岸；", py:"jǐ diǎn lù sī, rì mù cháng fēi hóng liǎo àn;"},
+    {hz:"一双，春朝频泛绿杨桥。", py:"yī shuāng, chūn zhāo pín fàn lǜ yáng qiáo."},
+    {hz:"开对落，暗对昭。赵瑟对虞韶。", py:"kāi duì luò, àn duì zhāo. zhào sè duì yú sháo."},
+    {hz:"轺车对驿骑，锦绣对琼瑶。", py:"yáo chē duì yì jì, jǐn xiù duì qióng yáo."},
+    {hz:"羞攘臂，懒折腰。范甑对颜瓢。", py:"xiū rǎng bì, lǎn zhé yāo. fàn zèng duì yán piáo."},
+    {hz:"寒天鸳帐酒，夜月凤台箫。", py:"hán tiān yuān zhàng jiǔ, yè yuè fèng tái xiāo."},
+    {hz:"舞女腰肢杨柳软，佳人颜貌海棠娇。", py:"wǔ nǚ yāo zhī yáng liǔ ruǎn, jiā rén yán mào hǎi táng jiāo."},
+    {hz:"豪客寻春，南陌草青香阵阵；", py:"háo kè xún chūn, nán mò cǎo qīng xiāng zhèn zhèn;"},
+    {hz:"闲人避暑，东堂蕉绿影摇摇。", py:"xián rén bì shǔ, dōng táng jiāo lǜ yǐng yáo yáo."},
+    {hz:"班对马，董对晁。夏昼对春宵。", py:"bān duì mǎ, dǒng duì cháo. xià zhòu duì chūn xiāo."},
+    {hz:"雷声对电影，麦穗对禾苗。", py:"léi shēng duì diàn yǐng, mài suì duì hé miáo."},
+    {hz:"八千路，廿四桥。总角对垂髫。", py:"bā qiān lù, niàn sì qiáo. zǒng jiǎo duì chuí tiáo."},
+    {hz:"露桃匀嫩脸，风柳舞纤腰。", py:"lù táo yún nèn liǎn, fēng liǔ wǔ xiān yāo."},
+    {hz:"贾谊赋成伤鸟，周公诗就托鸱鸮。", py:"jiǎ yì fù chéng shāng niǎo, zhōu gōng shī jiù tuō chī xiāo."},
+    {hz:"幽寺寻僧，逸兴岂知俄尔尽；", py:"yōu sì xún sēng, yì xìng qǐ zhī é ěr jìn;"},
+    {hz:"长亭送客，离魂不觉黯然消。", py:"cháng tíng sòng kè, lí hún bù jué àn rán xiāo."},
+  ],
+  // ===== 下平·三肴 =====
+  [
+    {hz:"风对雅，象对爻。巨蟒对长蛟。", py:"fēng duì yǎ, xiàng duì yáo. jù mǎng duì cháng jiāo."},
+    {hz:"天文对地理，蟋蟀对螵蛸。", py:"tiān wén duì dì lǐ, xī shuài duì piāo xiāo."},
+    {hz:"龙夭矫，虎咆哮。北学对东胶。", py:"lóng yāo jiǎo, hǔ páo xiào. běi xué duì dōng jiāo."},
+    {hz:"筑台须垒土，成屋必诛茅。", py:"zhù tái xū lěi tǔ, chéng wū bì zhū máo."},
+    {hz:"潘岳不忘秋兴赋，边韶常被昼眠嘲。", py:"pān yuè bù wàng qiū xīng fù, biān sháo cháng bèi zhòu mián cháo."},
+    {hz:"抚养群黎，已见国家隆治；", py:"fǔ yǎng qún lí, yǐ jiàn guó jiā lóng zhì;"},
+    {hz:"滋生万物，方知天地泰交。", py:"zī shēng wàn wù, fāng zhī tiān dì tài jiāo."},
+    {hz:"蛇对虺，蜃对蛟。麟薮对鹊巢。", py:"shé duì huǐ, shèn duì jiāo. lín sǒu duì què cháo."},
+    {hz:"风声对月色，麦穗对桑苞。", py:"fēng shēng duì yuè sè, mài suì duì sāng bāo."},
+    {hz:"何妥难，子云嘲。楚甸对商郊。", py:"hé tuǒ nàn, zǐ yún cháo. chǔ diàn duì shāng jiāo."},
+    {hz:"五音惟耳听，万虑在心包。", py:"wǔ yīn wéi ěr tīng, wàn lǜ zài xīn bāo."},
+    {hz:"葛被汤征因仇饷，楚遭齐伐责包茅。", py:"gě bèi tāng zhēng yīn chóu xiǎng, chǔ zāo qí fá zé bāo máo."},
+    {hz:"高矣若天，洵是圣人大道；", py:"gāo yǐ ruò tiān, xún shì shèng rén dà dào;"},
+    {hz:"淡而如水，实为君子神交。", py:"dàn ér rú shuǐ, shí wéi jūn zǐ shén jiāo."},
+    {hz:"牛对马，犬对猫。旨酒对嘉肴。", py:"niú duì mǎ, quǎn duì māo. zhǐ jiǔ duì jiā yáo."},
+    {hz:"桃红对柳绿，竹叶对松梢。", py:"táo hóng duì liǔ lǜ, zhú yè duì sōng shāo."},
+    {hz:"藜杖叟，布衣樵，北野对东郊。", py:"lí zhàng sǒu, bù yī qiáo, běi yě duì dōng jiāo."},
+    {hz:"白驹形皎皎，黄鸟语交交。", py:"bái jū xíng jiǎo jiǎo, huáng niǎo yǔ jiāo jiāo."},
+    {hz:"花圃春残无客到，柴门夜永有僧敲。", py:"huā pǔ chūn cán wú kè dào, chái mén yè yǒng yǒu sēng qiāo."},
+    {hz:"墙畔佳人，飘扬竞把秋千舞；", py:"qiáng pàn jiā rén, piāo yáng jìng bǎ qiū qiān wǔ;"},
+    {hz:"楼前公子，笑语争将蹴鞠抛。", py:"lóu qián gōng zǐ, xiào yǔ zhēng jiāng cù jū pāo."},
+  ],
+  // ===== 下平·四豪 =====
+  [
+    {hz:"琴对瑟，剑对刀。地迥对天高。", py:"qín duì sè, jiàn duì dāo. dì jiǒng duì tiān gāo."},
+    {hz:"峨冠对博带，紫绶对绯袍。", py:"é guān duì bó dài, zǐ shòu duì fēi páo."},
+    {hz:"煎异茗，酌香醪。虎兕对猿猱。", py:"jiān yì míng, zhuó xiāng láo. hǔ sì duì yuán náo."},
+    {hz:"武夫攻骑射，野妇务蚕缫。", py:"wǔ fū gōng qí shè, yě fù wù cán sāo."},
+    {hz:"秋雨一川淇澳竹，春风两岸武陵桃。", py:"qiū yǔ yī chuān qí ào zhú, chūn fēng liǎng àn wǔ líng táo."},
+    {hz:"螺髻青浓，楼外晚山千仞；", py:"luó jì qīng nóng, lóu wài wǎn shān qiān rèn;"},
+    {hz:"鸭头绿腻，溪中春水半篙。", py:"yā tóu lǜ nì, xī zhōng chūn shuǐ bàn gāo."},
+    {hz:"刑对赏，贬对褒。破斧对征袍。", py:"xíng duì shǎng, biǎn duì bāo. pò fǔ duì zhēng páo."},
+    {hz:"梧桐对橘柚，枳棘对蓬蒿。", py:"wú tóng duì jú yòu, zhǐ jí duì péng hāo."},
+    {hz:"雷焕剑，吕虔刀。橄榄对葡萄。", py:"léi huàn jiàn, lǚ qián dāo. gǎn lǎn duì pú táo."},
+    {hz:"一椽书舍小，百尺酒楼高。", py:"yī chuán shū shè xiǎo, bǎi chǐ jiǔ lóu gāo."},
+    {hz:"李白能诗时秉笔，刘伶爱酒每糟。", py:"lǐ bái néng shī shí bǐng bǐ, liú líng ài jiǔ měi zāo."},
+    {hz:"礼别尊卑，拱北众星常灿灿；", py:"lǐ bié zūn bēi, gǒng běi zhòng xīng cháng càn càn;"},
+    {hz:"势分高下，朝东万水自滔滔。", py:"shì fēn gāo xià, cháo dōng wàn shuǐ zì tāo tāo."},
+    {hz:"瓜对果，李对桃。犬子对羊羔。", py:"guā duì guǒ, lǐ duì táo. quǎn zǐ duì yáng gāo."},
+    {hz:"春分对夏至，谷水对山涛。", py:"chūn fēn duì xià zhì, gǔ shuǐ duì shān tāo."},
+    {hz:"双凤翼，九牛毛。主逸对臣劳。", py:"shuāng fèng yì, jiǔ niú máo. zhǔ yì duì chén láo."},
+    {hz:"水流无限阔，山耸有余高。", py:"shuǐ liú wú xiàn kuò, shān sǒng yǒu yú gāo."},
+    {hz:"雨打村童新牧笠，尘生边将旧征袍。", py:"yǔ dǎ cūn tóng xīn mù lì, chén shēng biān jiàng jiù zhēng páo."},
+    {hz:"俊士居官，荣列鹓鸿之序；", py:"jùn shì jū guān, róng liè yuān hóng zhī xù;"},
+    {hz:"忠臣报国，誓殚犬马之劳。", py:"zhōng chén bào guó, shì dān quǎn mǎ zhī láo."},
+  ],
+  // ===== 下平·五歌 =====
+  [
+    {hz:"山对水，海对河。雪竹对烟萝。", py:"shān duì shuǐ, hǎi duì hé. xuě zhú duì yān luó."},
+    {hz:"新欢对旧恨，痛饮对高歌。", py:"xīn huān duì jiù hèn, tòng yǐn duì gāo gē."},
+    {hz:"琴再抚，剑重磨。媚柳对枯荷。", py:"qín zài fǔ, jiàn chóng mó. mèi liǔ duì kū hé."},
+    {hz:"荷盘从雨洗，柳线任风搓。", py:"hé pán cóng yǔ xǐ, liǔ xiàn rèn fēng cuō."},
+    {hz:"饮酒岂知欹醉帽，观棋不觉烂樵柯。", py:"yǐn jiǔ qǐ zhī qī zuì mào, guān qí bù jué làn qiáo kē."},
+    {hz:"山寺清幽，直踞千寻云岭；", py:"shān sì qīng yōu, zhí jù qiān xún yún lǐng;"},
+    {hz:"江楼宏敞，遥临万顷烟波。", py:"jiāng lóu hóng chǎng, yáo lín wàn qǐng yān bō."},
+    {hz:"繁对简，少对多。里咏对途歌。", py:"fán duì jiǎn, shǎo duì duō. lǐ yǒng duì tú gē."},
+    {hz:"宦情对旅况，银鹿对铜驼。", py:"huàn qíng duì lǚ kuàng, yín lù duì tóng tuó."},
+    {hz:"刺史鸭，将军鹅。玉律对金科。", py:"cì shǐ yā, jiāng jūn é. yù lǜ duì jīn kē."},
+    {hz:"古堤垂亸柳，曲沼长新荷。", py:"gǔ dī chuí duǒ liǔ, qū zhǎo zhǎng xīn hé."},
+    {hz:"命驾吕因思叔夜，引车蔺为避廉颇。", py:"mìng jià lǚ yīn sī shū yè, yǐn chē lìn wèi bì lián pō."},
+    {hz:"千尺水帘，今古无人能手卷；", py:"qiān chǐ shuǐ lián, jīn gǔ wú rén néng shǒu juǎn;"},
+    {hz:"一轮月镜，乾坤何匠用功磨。", py:"yī lún yuè jìng, qián kūn hé jiàng yòng gōng mó."},
+    {hz:"霜对露，浪对波。径菊对池荷。", py:"shuāng duì lù, làng duì bō. jìng jú duì chí hé."},
+    {hz:"酒阑对歌罢，日暖对风和。", py:"jiǔ lán duì gē bà, rì nuǎn duì fēng hé."},
+    {hz:"梁父咏，楚狂歌。放鹤对观鹅。", py:"liáng fǔ yǒng, chǔ kuáng gē. fàng hè duì guān é."},
+    {hz:"史才推永叔，刀笔仰萧何。", py:"shǐ cái tuī yǒng shū, dāo bǐ yǎng xiāo hé."},
+    {hz:"种橘犹嫌千树少，寄梅谁信一枝多。", py:"zhòng jú yóu xián qiān shù shǎo, jì méi shéi xìn yī zhī duō."},
+    {hz:"林下风生，黄发村童推牧笠；", py:"lín xià fēng shēng, huáng fà cūn tóng tuī mù lì;"},
+    {hz:"江头日出，皓眉溪叟晒渔蓑。", py:"jiāng tóu rì chū, hào méi xī sǒu shài yú suō."},
+  ],
+  // ===== 下平·六麻 =====
+  [
+    {hz:"松对柏，缕对麻。蚁阵对蜂衙。", py:"sōng duì bǎi, lǚ duì má. yǐ zhèn duì fēng yá."},
+    {hz:"赪鳞对白鹭，冻雀对昏鸦。", py:"chēng lín duì bái lù, dòng què duì hūn yā."},
+    {hz:"白堕酒，碧沉茶。品笛对吹笳。", py:"bái duò jiǔ, bì chén chá. pǐn dí duì chuī jiā."},
+    {hz:"秋凉梧堕叶，春暖杏开花。", py:"qiū liáng wú duò yè, chūn nuǎn xìng kāi huā."},
+    {hz:"雨长苔痕侵壁砌，月移梅影上窗纱。", py:"yǔ zhǎng tái hén qīn bì qì, yuè yí méi yǐng shàng chuāng shā."},
+    {hz:"飒飒秋风，度城头之筚篥；", py:"sà sà qiū fēng, dù chéng tóu zhī bì lì;"},
+    {hz:"迟迟晚照，动江上之琵琶。", py:"chí chí wǎn zhào, dòng jiāng shàng zhī pí pá."},
+    {hz:"优对劣，凸对凹。翠竹对黄花。", py:"yōu duì liè, tū duì wā. cuì zhú duì huáng huā."},
+    {hz:"松杉对杞梓，菽麦对桑麻。", py:"sōng shān duì qǐ zǐ, shū mài duì sāng má."},
+    {hz:"山不断，水无涯。煮酒对烹茶。", py:"shān bù duàn, shuǐ wú yá. zhǔ jiǔ duì pēng chá."},
+    {hz:"鱼游池面水，鹭立岸头沙。", py:"yú yóu chí miàn shuǐ, lù lì àn tóu shā."},
+    {hz:"百亩风翻陶令秫，一畦雨熟邵平瓜。", py:"bǎi mǔ fēng fān táo lìng shú, yī qí yǔ shú shào píng guā."},
+    {hz:"闲捧竹根，饮李白一壶之酒；", py:"xián pěng zhú gēn, yǐn lǐ bái yī hú zhī jiǔ;"},
+    {hz:"偶擎桐叶，啜卢仝七碗之茶。", py:"ǒu qíng tóng yè, chuò lú tóng qī wǎn zhī chá."},
+    {hz:"吴对楚，蜀对巴。落日对流霞。", py:"wú duì chǔ, shǔ duì bā. luò rì duì liú xiá."},
+    {hz:"酒钱对诗债，柏叶对松花。", py:"jiǔ qián duì shī zhài, bǎi yè duì sōng huā."},
+    {hz:"驰驿骑，泛仙槎。碧玉对丹砂。", py:"chí yì jì, fàn xiān chá. bì yù duì dān shā."},
+    {hz:"设桥偏送笋，开道竟还瓜。", py:"shè qiáo piān sòng sǔn, kāi dào jìng huán guā."},
+    {hz:"楚国大夫沉汨水，洛阳才子谪长沙。", py:"chǔ guó dà fū chén mì shuǐ, luò yáng cái zǐ zhé cháng shā."},
+    {hz:"书箧琴囊，乃士流活计；", py:"shū qiè qín náng, nǎi shì liú huó jì;"},
+    {hz:"药炉茶鼎，实闲客生涯。", py:"yào lú chá dǐng, shí xián kè shēng yá."},
+  ],
+  // ===== 下平·七阳 =====
+  [
+    {hz:"高对下，短对长。柳影对花香。", py:"gāo duì xià, duǎn duì cháng. liǔ yǐng duì huā xiāng."},
+    {hz:"词人对赋客，五帝对三王。", py:"cí rén duì fù kè, wǔ dì duì sān wáng."},
+    {hz:"深院落，小池塘。晚眺对晨妆。", py:"shēn yuàn luò, xiǎo chí táng. wǎn tiào duì chén zhuāng."},
+    {hz:"绛霄唐帝殿，绿野晋公堂。", py:"jiàng xiāo táng dì diàn, lǜ yě jìn gōng táng."},
+    {hz:"寒集谢庄衣上雪，秋添潘岳鬓边霜。", py:"hán jí xiè zhuāng yī shàng xuě, qiū tiān pān yuè bìn biān shuāng."},
+    {hz:"人浴兰汤，事不忘于端午；", py:"rén yù lán tāng, shì bù wàng yú duān wǔ;"},
+    {hz:"客斟菊酒，兴常寄于重阳。", py:"kè zhēn jú jiǔ, xìng cháng jì yú chóng yáng."},
+    {hz:"尧对舜，禹对汤。晋宋对隋唐。", py:"yáo duì shùn, yǔ duì tāng. jìn sòng duì suí táng."},
+    {hz:"奇花对异卉，夏日对秋霜。", py:"qí huā duì yì huì, xià rì duì qiū shuāng."},
+    {hz:"八叉手，九回肠。地久对天长。", py:"bā chā shǒu, jiǔ huí cháng. dì jiǔ duì tiān cháng."},
+    {hz:"一堤杨柳绿，三径菊花黄。", py:"yī dī yáng liǔ lǜ, sān jìng jú huā huáng."},
+    {hz:"闻鼓塞兵方战斗，听钟宫女正梳妆。", py:"wén gǔ sài bīng fāng zhàn dòu, tīng zhōng gōng nǚ zhèng shū zhuāng."},
+    {hz:"春饮方归，纱帽半淹邻舍酒；", py:"chūn yǐn fāng guī, shā mào bàn yān lín shè jiǔ;"},
+    {hz:"早朝初退，衮衣微惹御炉香。", py:"zǎo cháo chū tuì, gǔn yī wēi rě yù lú xiāng."},
+    {hz:"荀对孟，老对庄。亸柳对垂杨。", py:"xún duì mèng, lǎo duì zhuāng. duǒ liǔ duì chuí yáng."},
+    {hz:"仙宫对梵宇，小阁对长廊。", py:"xiān gōng duì fàn yǔ, xiǎo gé duì cháng láng."},
+    {hz:"风月窟，水云乡。蟋蟀对螳螂。", py:"fēng yuè kū, shuǐ yún xiāng. xī shuài duì táng láng."},
+    {hz:"暖烟香霭霭，寒烛影煌煌。", py:"nuǎn yān xiāng ǎi ǎi, hán zhú yǐng huáng huáng."},
+    {hz:"伍子欲酬渔父剑，韩生尝窃贾公香。", py:"wǔ zǐ yù chóu yú fǔ jiàn, hán shēng cháng qiè jiǎ gōng xiāng."},
+    {hz:"三月韶光，常忆花明柳媚；", py:"sān yuè sháo guāng, cháng yì huā míng liǔ mèi;"},
+    {hz:"一年好景，难忘橘绿橙黄。", py:"yī nián hǎo jǐng, nán wàng jú lǜ chéng huáng."},
+  ],
+  // ===== 下平·八庚 =====
+  [
+    {hz:"深对浅，重对轻。有影对无声。", py:"shēn duì qiǎn, zhòng duì qīng. yǒu yǐng duì wú shēng."},
+    {hz:"蜂腰对蝶翅，宿醉对余酲。", py:"fēng yāo duì dié chì, sù zuì duì yú chéng."},
+    {hz:"天北缺，日东生。独卧对同行。", py:"tiān běi quē, rì dōng shēng. dú wò duì tóng xíng."},
+    {hz:"寒冰三尺厚，秋月十分明。", py:"hán bīng sān chǐ hòu, qiū yuè shí fēn míng."},
+    {hz:"万卷书容闲客览，一樽酒待故人倾。", py:"wàn juàn shū róng xián kè lǎn, yī zūn jiǔ dài gù rén qīng."},
+    {hz:"心侈唐玄，厌看霓裳之曲；", py:"xīn chǐ táng xuán, yàn kàn ní cháng zhī qǔ;"},
+    {hz:"意骄陈主，饱闻玉树之赓。", py:"yì jiāo chén zhǔ, bǎo wén yù shù zhī gēng."},
+    {hz:"虚对实，送对迎。后甲对先庚。", py:"xū duì shí, sòng duì yíng. hòu jiǎ duì xiān gēng."},
+    {hz:"鼓琴对舍瑟，搏虎对骑鲸。", py:"gǔ qín duì shě sè, bó hǔ duì qí jīng."},
+    {hz:"金匼匝，玉琤。玉宇对金茎。", py:"jīn kē zā, yù chēng. yù yǔ duì jīn jīng."},
+    {hz:"花间双粉蝶，柳内几黄莺。", py:"huā jiān shuāng fěn dié, liǔ nèi jǐ huáng yīng."},
+    {hz:"贫里每甘藜藿味，醉中厌听管弦声。", py:"pín lǐ měi gān lí huò wèi, zuì zhōng yàn tīng guǎn xián shēng."},
+    {hz:"肠断秋闺，凉吹已侵重被冷；", py:"cháng duàn qiū guī, liáng chuī yǐ qīn chóng bèi lěng;"},
+    {hz:"梦惊晓枕，残蟾犹照半窗明。", py:"mèng jīng xiǎo zhěn, cán chán yóu zhào bàn chuāng míng."},
+    {hz:"渔对猎，钓对耕。玉振对金声。", py:"yú duì liè, diào duì gēng. yù zhèn duì jīn shēng."},
+    {hz:"雉城对雁塞，柳袅对葵倾。", py:"zhì chéng duì yàn sài, liǔ niǎo duì kuí qīng."},
+    {hz:"吹玉笛，弄银笙。阮杖对桓筝。", py:"chuī yù dí, nòng yín shēng. ruǎn zhàng duì huán zhēng."},
+    {hz:"墨呼松处士，纸号楮先生。", py:"mò hū sōng chǔ shì, zhǐ hào chǔ xiān shēng."},
+    {hz:"露浥好花潘岳县，风搓细柳亚夫营。", py:"lù yì hǎo huā pān yuè xiàn, fēng cuō xì liǔ yà fū yíng."},
+    {hz:"抚动琴弦，遽觉座中风雨至；", py:"fǔ dòng qín xián, jù jué zuò zhōng fēng yǔ zhì;"},
+    {hz:"哦成诗句，应知窗外鬼神惊。", py:"é chéng shī jù, yīng zhī chuāng wài guǐ shén jīng."},
+  ],
+  // ===== 下平·九青 =====
+  [
+    {hz:"红对紫，白对青。渔火对禅灯。", py:"hóng duì zǐ, bái duì qīng. yú huǒ duì chán dēng."},
+    {hz:"唐诗对汉史，释典对仙经。", py:"táng shī duì hàn shǐ, shì diǎn duì xiān jīng."},
+    {hz:"龟曳尾，鹤梳翎。月榭对风亭。", py:"guī yè wěi, hè shū líng. yuè xiè duì fēng tíng."},
+    {hz:"一轮秋夜月，几点晓天星。", py:"yī lún qiū yè yuè, jǐ diǎn xiǎo tiān xīng."},
+    {hz:"晋士只知山简醉，楚人谁识屈原醒。", py:"jìn shì zhǐ zhī shān jiǎn zuì, chǔ rén shéi shí qū yuán xǐng."},
+    {hz:"绣倦佳人，慵把鸳鸯文作枕；", py:"xiù juàn jiā rén, yōng bǎ yuān yāng wén zuò zhěn;"},
+    {hz:"吮毫画者，思将孔雀写为屏。", py:"shǔn háo huà zhě, sī jiāng kǒng què xiě wéi píng."},
+    {hz:"行对坐，醉对醒。佩紫对纡青。", py:"xíng duì zuò, zuì duì xǐng. pèi zǐ duì yū qīng."},
+    {hz:"棋枰对笔架，雨雪对雷霆。", py:"qí píng duì bǐ jià, yǔ xuě duì léi tíng."},
+    {hz:"狂蛱蝶，小蜻蜓。水岸对沙汀。", py:"kuáng jiá dié, xiǎo qīng tíng. shuǐ àn duì shā tīng."},
+    {hz:"天台孙绰赋，剑阁孟阳铭。", py:"tiān tāi sūn chuò fù, jiàn gé mèng yáng míng."},
+    {hz:"传信子卿千里雁，照书车胤一囊萤。", py:"chuán xìn zǐ qīng qiān lǐ yàn, zhào shū chē yìn yī náng yíng."},
+    {hz:"冉冉白云，夜半高遮千里月；", py:"rǎn rǎn bái yún, yè bàn gāo zhē qiān lǐ yuè;"},
+    {hz:"澄澄碧水，宵中寒映一天星。", py:"chéng chéng bì shuǐ, xiāo zhōng hán yìng yī tiān xīng."},
+    {hz:"书对史，传对经。鹦鹉对鹡鸰。", py:"shū duì shǐ, zhuàn duì jīng. yīng wǔ duì jí líng."},
+    {hz:"黄茅对白荻，绿草对青萍。", py:"huáng máo duì bái dí, lǜ cǎo duì qīng píng."},
+    {hz:"风绕铎，雨淋铃。水阁对山亭。", py:"fēng rào duó, yǔ lín líng. shuǐ gé duì shān tíng."},
+    {hz:"渚莲千朵白，岸柳两行青。", py:"zhǔ lián qiān duǒ bái, àn liǔ liǎng háng qīng."},
+    {hz:"汉代宫中生秀柞，尧时阶畔长祥蓂。", py:"hàn dài gōng zhōng shēng xiù zuò, yáo shí jiē pàn zhǎng xiáng míng."},
+    {hz:"一枰决胜，棋子分黑白；", py:"yī píng jué shèng, qí zǐ fēn hēi bái;"},
+    {hz:"半幅通灵，画色间丹青。", py:"bàn fú tōng líng, huà sè jiàn dān qīng."},
+  ],
+  // ===== 下平·十蒸 =====
+  [
+    {hz:"新对旧，降对升。白犬对苍鹰。", py:"xīn duì jiù, jiàng duì shēng. bái quǎn duì cāng yīng."},
+    {hz:"葛巾对藜杖。涧水对池冰。", py:"gé jīn duì lí zhàng. jiàn shuǐ duì chí bīng."},
+    {hz:"张兔网，挂鱼罾。燕雀对鹍鹏。", py:"zhāng tù wǎng, guà yú zēng. yàn què duì kūn péng."},
+    {hz:"炉中煎药火，窗下读书灯。", py:"lú zhōng jiān yào huǒ, chuāng xià dú shū dēng."},
+    {hz:"织锦逐梭成舞凤，画屏误笔作飞蝇。", py:"zhī jǐn zhú suō chéng wǔ fèng, huà píng wù bǐ zuò fēi yíng."},
+    {hz:"宴客刘公，座上满斟三雅爵；", py:"yàn kè liú gōng, zuò shàng mǎn zhēn sān yǎ jué;"},
+    {hz:"迎仙汉帝，宫中高插九光灯。", py:"yíng xiān hàn dì, gōng zhōng gāo chā jiǔ guāng dēng."},
+    {hz:"儒对士，佛对僧。面友对心朋。", py:"rú duì shì, fó duì sēng. miàn yǒu duì xīn péng."},
+    {hz:"春残对夏老，夜寝对晨兴。", py:"chūn cán duì xià lǎo, yè qǐn duì chén xīng."},
+    {hz:"千里马，九霄鹏。霞蔚对云蒸。", py:"qiān lǐ mǎ, jiǔ xiāo péng. xiá wèi duì yún zhēng."},
+    {hz:"寒堆阴岭雪，春泮水池冰。", py:"hán duī yīn lǐng xuě, chūn pàn shuǐ chí bīng."},
+    {hz:"亚父愤生撞玉斗，周公誓死作金縢。", py:"yà fù fèn shēng zhuàng yù dǒu, zhōu gōng shì sǐ zuò jīn téng."},
+    {hz:"将军元晖，莫怪人讥为饿虎；", py:"jiāng jūn yuán huī, mò guài rén jī wéi è hǔ;"},
+    {hz:"侍中卢昶，难逃世号作饥鹰。", py:"shì zhōng lú chǎng, nán táo shì hào zuò jī yīng."},
+    {hz:"规对矩，墨对绳。独步对同登。", py:"guī duì jǔ, mò duì shéng. dú bù duì tóng dēng."},
+    {hz:"吟哦对讽咏，访友对寻僧。", py:"yín é duì fěng yǒng, fǎng yǒu duì xún sēng."},
+    {hz:"风绕屋，水襄陵。紫鹄对苍鹰。", py:"fēng rào wū, shuǐ xiāng líng. zǐ hú duì cāng yīng."},
+    {hz:"鸟寒惊夜月，鱼暖上春冰。", py:"niǎo hán jīng yè yuè, yú nuǎn shàng chūn bīng."},
+    {hz:"扬子口中飞白凤，何郎鼻上集青蝇。", py:"yáng zǐ kǒu zhōng fēi bái fèng, hé láng bí shàng jí qīng yíng."},
+    {hz:"巨鲤跃池，翻几重之密藻；", py:"jù lǐ yuè chí, fān jǐ chóng zhī mì zǎo;"},
+    {hz:"颠猿饮涧，挂百尺之垂藤。", py:"diān yuán yǐn jiàn, guà bǎi chǐ zhī chuí téng."},
+  ],
+  // ===== 下平·十一尤 =====
+  [
+    {hz:"荣对辱，喜对忧。夜宴对春游。", py:"róng duì rǔ, xǐ duì yōu. yè yàn duì chūn yóu."},
+    {hz:"燕关对楚水，蜀犬对吴牛。", py:"yān guān duì chǔ shuǐ, shǔ quǎn duì wú niú."},
+    {hz:"茶敌睡，酒消愁。青眼对白头。", py:"chá dí shuì, jiǔ xiāo chóu. qīng yǎn duì bái tóu."},
+    {hz:"马迁修史记，孔子作春秋。", py:"mǎ qiān xiū shǐ jì, kǒng zǐ zuò chūn qiū."},
+    {hz:"适兴子猷常泛棹，思归王粲强登楼。", py:"shì xìng zǐ yóu cháng fàn zhào, sī guī wáng càn qiǎng dēng lóu."},
+    {hz:"窗下佳人，妆罢重将金插鬓；", py:"chuāng xià jiā rén, zhuāng bà chóng jiāng jīn chā bìn;"},
+    {hz:"筵前舞妓，曲终还要锦缠头。", py:"yán qián wǔ jì, qǔ zhōng huán yào jǐn chán tóu."},
+    {hz:"唇对齿，角对头。策马对骑牛。", py:"chún duì chǐ, jiǎo duì tóu. cè mǎ duì qí niú."},
+    {hz:"毫尖对笔底，绮阁对雕楼。", py:"háo jiān duì bǐ dǐ, qǐ gé duì diāo lóu."},
+    {hz:"杨柳岸，荻芦洲。语燕对啼鸠。", py:"yáng liǔ àn, dí lú zhōu. yǔ yàn duì tí jiū."},
+    {hz:"客乘金络马，人泛木兰舟。", py:"kè chéng jīn luò mǎ, rén fàn mù lán zhōu."},
+    {hz:"绿野耕夫春举耜，碧池渔父晚垂钩。", py:"lǜ yě gēng fū chūn jǔ sì, bì chí yú fǔ wǎn chuí gōu."},
+    {hz:"波浪千层，喜见蛟龙得水；", py:"bō làng qiān céng, xǐ jiàn jiāo lóng dé shuǐ;"},
+    {hz:"云霄万里，惊看雕鹗横秋。", py:"yún xiāo wàn lǐ, jīng kàn diāo è héng qiū."},
+    {hz:"庵对寺，殿对楼。酒艇对渔舟。", py:"ān duì sì, diàn duì lóu. jiǔ tǐng duì yú zhōu."},
+    {hz:"金龙对彩凤，豮豕对童牛。", py:"jīn lóng duì cǎi fèng, fén shǐ duì tóng niú."},
+    {hz:"王郎帽，苏子裘。四季对三秋。", py:"wáng láng mào, sū zǐ qiú. sì jì duì sān qiū."},
+    {hz:"峰峦扶地秀，江汉接天流。", py:"fēng luán fú dì xiù, jiāng hàn jiē tiān liú."},
+    {hz:"一湾绿水渔村小，万里青山佛寺幽。", py:"yī wān lǜ shuǐ yú cūn xiǎo, wàn lǐ qīng shān fó sì yōu."},
+    {hz:"龙马呈河，羲皇阐微而画卦；", py:"lóng mǎ chéng hé, xī huáng chǎn wēi ér huà guà;"},
+    {hz:"神龟出洛，禹王取法以陈畴。", py:"shén guī chū luò, yǔ wáng qǔ fǎ yǐ chén chóu."},
+  ],
+  // ===== 下平·十二侵 =====
+  [
+    {hz:"眉对目，口对心。锦瑟对瑶琴。", py:"méi duì mù, kǒu duì xīn. jǐn sè duì yáo qín."},
+    {hz:"晓耕对寒钓，晚笛对秋砧。", py:"xiǎo gēng duì hán diào, wǎn dí duì qiū zhēn."},
+    {hz:"松郁郁，竹森森。闵损对曾参。", py:"sōng yù yù, zhú sēn sēn. mǐn sǔn duì zēng shēn."},
+    {hz:"秦王亲击缶，虞帝自挥琴。", py:"qín wáng qīn jī fǒu, yú dì zì huī qín."},
+    {hz:"三献卞和尝泣玉，四知杨震固辞金。", py:"sān xiàn biàn hé cháng qì yù, sì zhī yáng zhèn gù cí jīn."},
+    {hz:"寂寂秋朝，庭叶因霜摧嫩色；", py:"jì jì qiū zhāo, tíng yè yīn shuāng cuī nèn sè;"},
+    {hz:"沉沉春夜，砌花随月转清阴。", py:"chén chén chūn yè, qì huā suí yuè zhuǎn qīng yīn."},
+    {hz:"前对后，古对今。野兽对山禽。", py:"qián duì hòu, gǔ duì jīn. yě shòu duì shān qín."},
+    {hz:"犍牛对牝马，水浅对山深。", py:"jiān niú duì pìn mǎ, shuǐ qiǎn duì shān shēn."},
+    {hz:"曾点瑟，戴逵琴。璞玉对浑金。", py:"zēng diǎn sè, dài kuí qín. pú yù duì hún jīn."},
+    {hz:"艳红花弄色，浓绿柳敷阴。", py:"yàn hóng huā nòng sè, nóng lǜ liǔ fū yīn."},
+    {hz:"不雨汤王方剪爪，有风楚子正披襟。", py:"bù yǔ tāng wáng fāng jiǎn zhǎo, yǒu fēng chǔ zǐ zhèng pī jīn."},
+    {hz:"书生惜壮岁韶华，寸阴尺璧；", py:"shū shēng xī zhuàng suì sháo huá, cùn yīn chǐ bì;"},
+    {hz:"游子爱良宵光景，一刻千金。", py:"yóu zǐ ài liáng xiāo guāng jǐng, yī kè qiān jīn."},
+    {hz:"丝对竹，剑对琴。素志对丹心。", py:"sī duì zhú, jiàn duì qín. sù zhì duì dān xīn."},
+    {hz:"千愁对一醉，虎啸对龙吟。", py:"qiān chóu duì yī zuì, hǔ xiào duì lóng yín."},
+    {hz:"子罕玉，不疑金。往古对来今。", py:"zǐ hǎn yù, bù yí jīn. wǎng gǔ duì lái jīn."},
+    {hz:"天寒邹吹律，岁旱傅为霖。", py:"tiān hán zōu chuī lǜ, suì hàn fù wéi lín."},
+    {hz:"渠说子规为帝魄，侬知孔雀是家禽。", py:"qú shuō zǐ guī wéi dì pò, nóng zhī kǒng què shì jiā qín."},
+    {hz:"屈子沉江，处处舟中争系粽；", py:"qū zǐ chén jiāng, chù chù zhōu zhōng zhēng xì zòng;"},
+    {hz:"牛郎渡渚，家家台上竞穿针。", py:"niú láng dù zhǔ, jiā jiā tái shàng jìng chuān zhēn."},
+  ],
+  // ===== 下平·十三覃 =====
+  [
+    {hz:"千对百，两对三。地北对天南。", py:"qiān duì bǎi, liǎng duì sān. dì běi duì tiān nán."},
+    {hz:"佛堂对仙洞，道院对禅庵。", py:"fó táng duì xiān dòng, dào yuàn duì chán ān."},
+    {hz:"山泼黛，水浮蓝。雪岭对云潭。", py:"shān pō dài, shuǐ fú lán. xuě lǐng duì yún tán."},
+    {hz:"凤飞方翙翙，虎视已眈眈。", py:"fèng fēi fāng huì huì, hǔ shì yǐ dān dān."},
+    {hz:"窗下书生时讽咏，筵前酒客日耽酣。", py:"chuāng xià shū shēng shí fěng yǒng, yán qián jiǔ kè rì dān hān."},
+    {hz:"白草满郊，秋日牧征人之马；", py:"bái cǎo mǎn jiāo, qiū rì mù zhēng rén zhī mǎ;"},
+    {hz:"绿桑盈亩，春时供农妇之蚕。", py:"lǜ sāng yíng mǔ, chūn shí gōng nóng fù zhī cán."},
+    {hz:"将对欲，可对堪。德被对恩覃。", py:"jiāng duì yù, kě duì kān. dé bèi duì ēn tán."},
+    {hz:"权衡对尺度，雪寺对云庵。", py:"quán héng duì chǐ dù, xuě sì duì yún ān."},
+    {hz:"安邑枣，洞庭柑。不愧对无惭。", py:"ān yì zǎo, dòng tíng gān. bù kuì duì wú cán."},
+    {hz:"魏徵能直谏，王衍善清谈。", py:"wèi zhēng néng zhí jiàn, wáng yǎn shàn qīng tán."},
+    {hz:"紫梨摘去从山北，丹荔传来自海南。", py:"zǐ lí zhāi qù cóng shān běi, dān lì chuán lái zì hǎi nán."},
+    {hz:"攘鸡非君子所为，但当月一；", py:"rǎng jī fēi jūn zǐ suǒ wéi, dàn dāng yuè yī;"},
+    {hz:"养狙是山公之智，止用朝三。", py:"yǎng jū shì shān gōng zhī zhì, zhǐ yòng zhāo sān."},
+    {hz:"中对外，北对南。贝母对宜男。", py:"zhōng duì wài, běi duì nán. bèi mǔ duì yí nán."},
+    {hz:"移山对浚井，谏苦对言甘。", py:"yí shān duì jùn jǐng, jiàn kǔ duì yán gān."},
+    {hz:"千取百，二为三。魏尚对周堪。", py:"qiān qǔ bǎi, èr wéi sān. wèi shàng duì zhōu kān."},
+    {hz:"海门翻夕浪，山市拥晴岚。", py:"hǎi mén fān xī làng, shān shì yōng qíng lán."},
+    {hz:"新缔直投公子纻，旧交犹脱馆人骖。", py:"xīn dì zhí tóu gōng zǐ zhù, jiù jiāo yóu tuō guǎn rén cān."},
+    {hz:"文达淹通，已咏冰兮寒过水；", py:"wén dá yān tōng, yǐ yǒng bīng xī hán guò shuǐ;"},
+    {hz:"永和博雅，可知青者胜于蓝。", py:"yǒng hé bó yǎ, kě zhī qīng zhě shèng yú lán."},
+  ],
+  // ===== 下平·十四盐 =====
+  [
+    {hz:"悲对乐，爱对嫌。玉兔对银蟾。", py:"bēi duì lè, ài duì xián. yù tù duì yín chán."},
+    {hz:"醉侯对诗史，眼底对眉尖。", py:"zuì hóu duì shī shǐ, yǎn dǐ duì méi jiān."},
+    {hz:"风，雨绵绵。李苦对瓜甜。", py:"fēng, yǔ mián mián. lǐ kǔ duì guā tián."},
+    {hz:"画堂施锦帐，酒市舞青帘。", py:"huà táng shī jǐn zhàng, jiǔ shì wǔ qīng lián."},
+    {hz:"横槊赋诗传孟德，引壶酌酒尚陶潜。", py:"héng shuò fù shī chuán mèng dé, yǐn hú zhuó jiǔ shàng táo qián."},
+    {hz:"两曜迭明，日东生而月西出；", py:"liǎng yào dié míng, rì dōng shēng ér yuè xī chū;"},
+    {hz:"五行式序，水下润而火上炎。", py:"wǔ xíng shì xù, shuǐ xià rùn ér huǒ shàng yán."},
+    {hz:"如对似，减对添。绣幕对朱帘。", py:"rú duì sì, jiǎn duì tiān. xiù mù duì zhū lián."},
+    {hz:"探珠对献玉，鹭立对鱼潜。", py:"tàn zhū duì xiàn yù, lù lì duì yú qián."},
+    {hz:"玉屑饭，水晶盐。手剑对腰镰。", py:"yù xiè fàn, shuǐ jīng yán. shǒu jiàn duì yāo lián."},
+    {hz:"燕巢依邃阁，蛛网挂虚檐。", py:"yàn cháo yī suì gé, zhū wǎng guà xū yán."},
+    {hz:"夺槊至三唐敬德，奕棋第一晋王恬。", py:"duó shuò zhì sān táng jìng dé, yì qí dì yī jìn wáng tián."},
+    {hz:"南浦客归，湛湛春波千顷净；", py:"nán pǔ kè guī, zhàn zhàn chūn bō qiān qǐng jìng;"},
+    {hz:"西楼人悄，弯弯夜月一钩纤。", py:"xī lóu rén qiǎo, wān wān yè yuè yī gōu xiān."},
+    {hz:"逢对遇，仰对瞻。市井对闾阎。", py:"féng duì yù, yǎng duì zhān. shì jǐng duì lǘ yán."},
+    {hz:"投簪对结绶，握发对掀髯。", py:"tóu zān duì jié shòu, wò fà duì xiān rán."},
+    {hz:"张绣幕，卷珠帘。石碏对江淹。", py:"zhāng xiù mù, juǎn zhū lián. shí què duì jiāng yān."},
+    {hz:"宵征方肃肃，夜饮已厌厌。", py:"xiāo zhēng fāng sù sù, yè yǐn yǐ yān yān."},
+    {hz:"心褊小人长戚戚，礼多君子屡谦谦。", py:"xīn biǎn xiǎo rén cháng qī qī, lǐ duō jūn zǐ lǚ qiān qiān."},
+    {hz:"美刺殊文，备三百五篇诗咏；", py:"měi cì shū wén, bèi sān bǎi wǔ piān shī yǒng;"},
+    {hz:"吉凶异画，变六十四卦爻占。", py:"jí xiōng yì huà, biàn liù shí sì guà yáo zhān."},
+  ],
+  // ===== 下平·十五咸 =====
+  [
+    {hz:"清对浊，苦对咸。一启对三缄。", py:"qīng duì zhuó, kǔ duì xián. yī qǐ duì sān jiān."},
+    {hz:"烟蓑对雨笠，月榜对风帆。", py:"yān suō duì yǔ lì, yuè bàng duì fēng fān."},
+    {hz:"莺睆，燕呢喃。柳杞对松杉。", py:"yīng huǎn, yàn ní nán. liǔ qǐ duì sōng shān."},
+    {hz:"情深悲素扇，泪痛湿青衫。", py:"qíng shēn bēi sù shàn, lèi tòng shī qīng shān."},
+    {hz:"汉室既能分四姓，周朝何用叛三监。", py:"hàn shì jì néng fēn sì xìng, zhōu cháo hé yòng pàn sān jiān."},
+    {hz:"破的而探牛心，豪矜王济；", py:"pò dì ér tàn niú xīn, háo jīn wáng jì;"},
+    {hz:"竖竿以挂犊鼻，贫笑阮咸。", py:"shù gān yǐ guà dú bí, pín xiào ruǎn xián."},
+    {hz:"能对否，圣对贤。卫瓘对浑瑊。", py:"néng duì fǒu, shèng duì xián. wèi guàn duì hún jiān."},
+    {hz:"雀罗对鱼网，翠对苍崖。", py:"què luó duì yú wǎng, cuì duì cāng yá."},
+    {hz:"红罗帐，白布衫。笔格对书函。", py:"hóng luó zhàng, bái bù shān. bǐ gé duì shū hán."},
+    {hz:"蕊香蜂竞采，泥软燕争衔。", py:"ruǐ xiāng fēng jìng cǎi, ní ruǎn yàn zhēng xián."},
+    {hz:"凶孽誓清闻祖逖，王家能乂有巫咸。", py:"xiōng niè shì qīng wén zǔ tì, wáng jiā néng yì yǒu wū xián."},
+    {hz:"溪叟新居，渔舍清幽临水岸；", py:"xī sǒu xīn jū, yú shè qīng yōu lín shuǐ àn;"},
+    {hz:"山僧久隐，梵宫寂寞倚云岩。", py:"shān sēng jiǔ yǐn, fàn gōng jì mò yǐ yún yán."},
+    {hz:"冠对带，帽对衫。议鲠对言谗。", py:"guān duì dài, mào duì shān. yì gěng duì yán chán."},
+    {hz:"行舟对御马，俗弊对民碞。", py:"xíng zhōu duì yù mǎ, sú bì duì mín yán."},
+    {hz:"鼠且硕，兔多毚。史册对书缄。", py:"shǔ qiě shuò, tù duō chán. shǐ cè duì shū jiān."},
+    {hz:"塞城闻奏角，江浦认归帆。", py:"sài chéng wén zòu jiǎo, jiāng pǔ rèn guī fān."},
+    {hz:"河水一源形弥弥，泰山万仞势岩岩。", py:"hé shuǐ yī yuán xíng mí mí, tài shān wàn rèn shì yán yán."},
+    {hz:"郑为武公，赋缁衣而美德；", py:"zhèng wèi wǔ gōng, fù zī yī ér měi dé;"},
+    {hz:"周因巷伯，歌贝锦以伤谗。", py:"zhōu yīn xiàng bó, gē bèi jǐn yǐ shāng chán."},
+  ],
+];
+
+const SECTION_TITLES = [
+  "上平·一东",
+  "上平·二冬",
+  "上平·三江",
+  "上平·四支",
+  "上平·五微",
+  "上平·六鱼",
+  "上平·七虞",
+  "上平·八齐",
+  "上平·九佳",
+  "上平·十灰",
+  "上平·十一真",
+  "上平·十二文",
+  "上平·十三元",
+  "上平·十四寒",
+  "上平·十五删",
+  "下平·一先",
+  "下平·二萧",
+  "下平·三肴",
+  "下平·四豪",
+  "下平·五歌",
+  "下平·六麻",
+  "下平·七阳",
+  "下平·八庚",
+  "下平·九青",
+  "下平·十蒸",
+  "下平·十一尤",
+  "下平·十二侵",
+  "下平·十三覃",
+  "下平·十四盐",
+  "下平·十五咸",
+];
+
+// ── 渲染 ──
+const reader = document.getElementById('reader');
+const PUNCT_RE = /^[，。！？；：、,.!?;:]$/;
+const PUNCT_MAP = { '，': ',', '。': '.', '；': ';', '：': ':', '！': '!', '？': '?' };
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function normalizePunct(char) {
+  return PUNCT_MAP[char] || char;
+}
+
+function alignPinyin(hz, py) {
+  const chars = Array.from(hz);
+  const words = py.trim().split(/\s+/).filter(Boolean);
+  let wordIndex = 0;
+  let pendingPunct = '';
+
+  return chars.map(char => {
+    if (PUNCT_RE.test(char)) {
+      const sound = pendingPunct || normalizePunct(char);
+      pendingPunct = '';
+      return { hz: char, py: sound, punct: true };
+    }
+
+    let sound = words[wordIndex++] || '';
+    const punctMatch = sound.match(/^(.+?)([,，.。;；:：!?！？])$/);
+    if (punctMatch) {
+      sound = punctMatch[1];
+      pendingPunct = normalizePunct(punctMatch[2]);
+    }
+
+    return { hz: char, py: sound, punct: false };
+  });
+}
+
+function renderVerse(verse) {
+  const cells = alignPinyin(verse.hz, verse.py).map(cell => {
+    const cls = cell.punct ? 'zi punct' : 'zi';
+    return `<span class="${cls}"><span class="py">${escapeHtml(cell.py)}</span><span class="hz">${escapeHtml(cell.hz)}</span></span>`;
+  }).join('');
+  return `<div class="verse" style="--cols:${Array.from(verse.hz).length}">${cells}</div>`;
+}
+
+const frag = document.createDocumentFragment();
+SHENGLV.forEach((para, i) => {
+  const sec = document.createElement('section');
+  sec.className = 'sec';
+  sec.id = 'sec-' + i;
+  const title = SECTION_TITLES[i] || '';
+  sec.innerHTML =
+    (title ? `<h2 class="sec-title">${escapeHtml(title)}</h2>` : '') +
+    `<div class="para">${para.map(renderVerse).join('')}</div>`;
+  frag.appendChild(sec);
+});
+reader.appendChild(frag);
+
+// ── 浮动目录 ──
+const btnToc = document.getElementById('btnToc');
+const tocDrawer = document.getElementById('tocDrawer');
+const tocOverlay = document.getElementById('tocOverlay');
+const tocList = document.getElementById('tocList');
+
+SECTION_TITLES.forEach((t, i) => {
+  const li = document.createElement('li');
+  li.textContent = (i + 1) + '. ' + t;
+  li.addEventListener('click', () => {
+    closeToc();
+    const target = document.getElementById('sec-' + i);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  tocList.appendChild(li);
+});
+
+function openToc() { tocDrawer.classList.add('show'); tocOverlay.classList.add('show'); }
+function closeToc() { tocDrawer.classList.remove('show'); tocOverlay.classList.remove('show'); }
+btnToc.addEventListener('click', openToc);
+tocOverlay.addEventListener('click', closeToc);
+
+// ── 拼音切换 ──
+const btnPinyin = document.getElementById('btnPinyin');
+let pinyinVisible = false;
+
+function setPinyin(visible) {
+  pinyinVisible = visible;
+  // 直接给每个 .py 设置内联 visibility——内联样式优先级最高，
+  // 不依赖 class 级联或 CSS 变量继承（这两种方式在 iframe 内被证实不可靠）
+  document.querySelectorAll('.py').forEach(el => {
+    el.style.visibility = visible ? 'visible' : 'hidden';
+  });
+  btnPinyin.textContent = visible ? '隐藏拼音' : '显示拼音';
+  forceIframeRepaint();
+}
+
+// 移动端 Safari(WebKit) 及部分移动浏览器在 iframe 内对 visibility 变更「惰性重绘」：
+// 状态已改对但屏幕不刷新（实测：手动全屏改变 iframe 尺寸后才显示）。
+// 这里每次切换都把承载本页的 iframe 高度抖动 1px 再还原，自动复刻那次 resize 重绘触发。
+// 顶层文档或跨源时 window.frameElement 为 null / 抛错，直接跳过（那些场景本就会正常重绘）。
+function forceIframeRepaint() {
+  let frame;
+  try { frame = window.frameElement; } catch (e) { return; }
+  if (!frame) return;
+  const prev = frame.style.height;
+  const h = Math.round(frame.getBoundingClientRect().height);
+  if (!h) return;
+  frame.style.height = (h - 1) + 'px';
+  void frame.offsetHeight;                 // 强制同步重排，让缩小的尺寸真正生效一次
+  requestAnimationFrame(() => { frame.style.height = prev || ''; });
+}
+
+btnPinyin.addEventListener('click', () => { setPinyin(!pinyinVisible); });
+
+
+// ── 滚动位置记忆 ──
+const LS_KEY_SCROLL = 'shenglvqimeng-scroll';
+let saveTimer = null;
+
+function saveScroll() {
+  try { localStorage.setItem(LS_KEY_SCROLL, String(window.scrollY)); } catch (e) {}
+}
+
+function restoreScroll() {
+  try {
+    const saved = localStorage.getItem(LS_KEY_SCROLL);
+    if (saved !== null) {
+      const y = parseInt(saved, 10);
+      if (y > 0) {
+        window.scrollTo({ top: y, behavior: 'instant' });
+        showToast('已恢复上次阅读位置');
+      }
+    }
+  } catch (e) {}
+}
+
+// 滚动时防抖保存
+window.addEventListener('scroll', () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveScroll, 2000);
+}, { passive: true });
+
+// 离开时保存
+window.addEventListener('beforeunload', saveScroll);
+// 页面隐藏时也保存（移动端切换 app）
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) saveScroll();
+});
+
+// ── Toast ──
+const toast = document.getElementById('toast');
+let toastTimer = null;
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ── 启动：页面完全渲染后恢复滚动位置 ──
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(restoreScroll, 1200);
+});
+</script>
+
+</body>
+</html>

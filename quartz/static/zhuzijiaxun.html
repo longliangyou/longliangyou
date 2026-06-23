@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>朱子家训</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --text: #3d2b1f;
+    --py-color: #a08060;
+    --btn-bg: #e8ddd0;
+    --btn-text: #5d4037;
+    --btn-border: #c4b8a8;
+    --toast-bg: #3d2b1f;
+    --toast-text: #f5f0e8;
+    --para-gap: 3em;
+    --verse-gap: 0.6em;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Songti SC", "宋体", "SimSun", "Noto Serif CJK SC", serif;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── top bar ── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+    pointer-events: none;
+  }
+  .topbar > * { pointer-events: auto; }
+
+  .topbar-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text);
+    opacity: 0.7;
+  }
+
+  .btn-pinyin {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    padding: 8px 18px;
+    border: 1px solid var(--btn-border);
+    border-radius: 20px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    /* 右侧留白把按钮左移一个按钮位，避开父页面悬浮在右上角的「全屏」按钮 */
+    margin-right: 84px;
+  }
+  .btn-pinyin:active { background: var(--btn-border); }
+
+  /* ── reading area ── */
+  .reader {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 80px 24px 60px;
+  }
+
+  /* ── paragraph ── */
+  .para { margin-bottom: var(--para-gap); }
+
+  /* ── verse line: every hanzi/punctuation occupies one equal column ── */
+  .verse {
+    --cell-width: 3.25em;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    align-items: end;
+    width: min(100%, calc(var(--cols) * var(--cell-width)));
+    margin: 0 auto var(--verse-gap);
+    text-align: center;
+  }
+
+  .zi {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .hz {
+    width: 100%;
+    font-size: 32px;
+    line-height: 1.45;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
+  .py {
+    width: 100%;
+    min-height: 1.35em;
+    color: var(--py-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 13px;
+    line-height: 1.25;
+    letter-spacing: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    visibility: hidden;
+  }
+
+  .zi.punct .py { font-size: 15px; }
+
+  /* ── section title (目录锚点) ── */
+  .sec { scroll-margin-top: 64px; }
+  .sec-title {
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    font-weight: normal;
+    color: var(--py-color);
+    letter-spacing: 0.18em;
+    opacity: 0.72;
+    margin: 0 0 1.1em;
+  }
+
+  /* ── 浮动目录：右下浮标 + 右侧抽屉 ── */
+  .btn-toc {
+    position: fixed;
+    right: 18px; bottom: 22px;
+    z-index: 150;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-toc:active { background: var(--btn-border); }
+
+  .toc-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s;
+    z-index: 200;
+  }
+  .toc-overlay.show { opacity: 1; pointer-events: auto; }
+
+  .toc-drawer {
+    position: fixed; top: 0; right: 0;
+    height: 100%; width: min(78vw, 300px);
+    background: var(--bg);
+    box-shadow: -6px 0 24px rgba(0,0,0,.22);
+    transform: translateX(100%);
+    transition: transform .28s ease;
+    z-index: 201;
+    display: flex; flex-direction: column;
+  }
+  .toc-drawer.show { transform: translateX(0); }
+
+  .toc-header {
+    padding: 18px 20px 12px;
+    font-weight: bold; font-size: 17px;
+    color: var(--text);
+    border-bottom: 1px solid var(--btn-border);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .toc-list {
+    list-style: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 0;
+    flex: 1;
+  }
+  .toc-list li {
+    padding: 11px 20px;
+    font-size: 15px;
+    color: var(--text);
+    cursor: pointer;
+    border-bottom: 1px solid rgba(196,184,168,.28);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toc-list li:active { background: var(--btn-bg); }
+
+
+  /* ── toast ── */
+  .toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--toast-bg);
+    color: var(--toast-text);
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── responsive ── */
+  @media (max-width: 480px) {
+    .verse { --cell-width: 2.85em; }
+    .hz { font-size: 28px; }
+    .py { font-size: 11.5px; }
+    .reader { padding: 72px 16px 48px; }
+    .topbar { padding: 10px 14px; }
+  }
+</style>
+</head>
+<body class="pinyin-hidden">
+
+<div class="topbar">
+  <span class="topbar-title">朱子家训</span>
+  <button class="btn-pinyin" id="btnPinyin" aria-label="切换拼音显示">显示拼音</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="reader" id="reader"></div>
+
+<button class="btn-toc" id="btnToc" aria-label="打开目录">目录</button>
+<div class="toc-overlay" id="tocOverlay"></div>
+<aside class="toc-drawer" id="tocDrawer" aria-label="目录">
+  <div class="toc-header">目录</div>
+  <ul class="toc-list" id="tocList"></ul>
+</aside>
+
+<script>
+// ── 朱子家训全文数据 ──
+const ZHUZIJIAXUN = [
+  // ===== 治家之始 =====
+  [
+    {hz:"黎明即起，洒扫庭除", py:"lí míng jí qǐ, sǎ sǎo tíng chú"},
+    {hz:"要内外整洁", py:"yào nèi wài zhěng jié"},
+    {hz:"既昏便息，关锁门户", py:"jì hūn biàn xī, guān suǒ mén hù"},
+    {hz:"必亲自检点", py:"bì qīn zì jiǎn diǎn"},
+  ],
+  // ===== 惜物节用 =====
+  [
+    {hz:"一粥一饭，当思来处不易", py:"yī zhōu yī fàn, dāng sī lái chù bù yì"},
+    {hz:"半丝半缕，恒念物力维艰", py:"bàn sī bàn lǚ, héng niàn wù lì wéi jiān"},
+    {hz:"宜未雨而绸缪", py:"yí wèi yǔ ér chóu móu"},
+    {hz:"毋临渴而掘井", py:"wú lín kě ér jué jǐng"},
+  ],
+  // ===== 俭约持家 =====
+  [
+    {hz:"自奉必须俭约", py:"zì fèng bì xū jiǎn yuē"},
+    {hz:"宴客切勿留连", py:"yàn kè qiè wù liú lián"},
+    {hz:"器具质而洁，瓦缶胜金玉", py:"qì jù zhì ér jié, wǎ fǒu shèng jīn yù"},
+    {hz:"饮食约而精，园蔬愈珍馐", py:"yǐn shí yuē ér jīng, yuán shū yù zhēn xiū"},
+  ],
+  // ===== 戒奢戒色 =====
+  [
+    {hz:"勿营华屋", py:"wù yíng huá wū"},
+    {hz:"勿谋良田", py:"wù móu liáng tián"},
+    {hz:"三姑六婆，实淫盗之媒", py:"sān gū liù pó, shí yín dào zhī méi"},
+    {hz:"婢美妾娇，非闺房之福", py:"bì měi qiè jiāo, fēi guī fáng zhī fú"},
+    {hz:"童仆勿用俊美", py:"tóng pú wù yòng jùn měi"},
+    {hz:"妻妾切忌艳妆", py:"qī qiè qiè jì yàn zhuāng"},
+  ],
+  // ===== 敬祖教子 =====
+  [
+    {hz:"祖宗虽远，祭祀不可不诚", py:"zǔ zōng suī yuǎn, jì sì bù kě bù chéng"},
+    {hz:"子孙虽愚，经书不可不读", py:"zǐ sūn suī yú, jīng shū bù kě bù dú"},
+    {hz:"居身务期质朴", py:"jū shēn wù qī zhì pǔ"},
+    {hz:"教子要有义方", py:"jiào zǐ yào yǒu yì fāng"},
+  ],
+  // ===== 戒贪戒酒 =====
+  [
+    {hz:"勿贪意外之财", py:"wù tān yì wài zhī cái"},
+    {hz:"勿饮过量之酒", py:"wù yǐn guò liàng zhī jiǔ"},
+  ],
+  // ===== 待人接物 =====
+  [
+    {hz:"与肩挑贸易，毋占便宜", py:"yǔ jiān tiāo mào yì, wú zhàn biàn yí"},
+    {hz:"见贫苦亲邻，须加温恤", py:"jiàn pín kǔ qīn lín, xū jiā wēn xù"},
+  ],
+  // ===== 伦常为重 =====
+  [
+    {hz:"刻薄成家，理无久享", py:"kè báo chéng jiā, lǐ wú jiǔ xiǎng"},
+    {hz:"伦常乖舛，立见消亡", py:"lún cháng guāi chuǎn, lì jiàn xiāo wáng"},
+    {hz:"兄弟叔侄，须分多润寡", py:"xiōng dì shū zhí, xū fēn duō rùn guǎ"},
+    {hz:"长幼内外，宜法肃辞严", py:"zhǎng yòu nèi wài, yí fǎ sù cí yán"},
+  ],
+  // ===== 孝悌本分 =====
+  [
+    {hz:"听妇言，乖骨肉，岂是丈夫", py:"tīng fù yán, guāi gǔ ròu, qǐ shì zhàng fū"},
+    {hz:"重资财，薄父母，不成人子", py:"zhòng zī cái, báo fù mǔ, bù chéng rén zǐ"},
+  ],
+  // ===== 嫁娶之道 =====
+  [
+    {hz:"嫁女择佳婿，毋索重聘", py:"jià nǚ zé jiā xù, wú suǒ zhòng pìn"},
+    {hz:"娶媳求淑女，毋计厚妆", py:"qǔ xí qiú shū nǚ, wú jì hòu zhuāng"},
+  ],
+  // ===== 处世之戒 =====
+  [
+    {hz:"见富贵而生谄容者，最可耻", py:"jiàn fù guì ér shēng chǎn róng zhě, zuì kě chǐ"},
+    {hz:"遇贫穷而作骄态者，贱莫甚", py:"yù pín qióng ér zuò jiāo tài zhě, jiàn mò shèn"},
+    {hz:"居家戒争讼", py:"jū jiā jiè zhēng sòng"},
+    {hz:"讼则终凶", py:"sòng zé zhōng xiōng"},
+    {hz:"处世戒多言", py:"chù shì jiè duō yán"},
+    {hz:"言多必失", py:"yán duō bì shī"},
+  ],
+  // ===== 戒恃戒贪 =====
+  [
+    {hz:"毋恃势力而凌逼孤寡", py:"wú shì shì lì ér líng bī gū guǎ"},
+    {hz:"毋贪口腹而恣杀牲禽", py:"wú tān kǒu fù ér zì shā shēng qín"},
+  ],
+  // ===== 戒惰自省 =====
+  [
+    {hz:"乖僻自是，悔误必多", py:"guāi pì zì shì, huǐ wù bì duō"},
+    {hz:"颓惰自甘，家道难成", py:"tuí duò zì gān, jiā dào nán chéng"},
+    {hz:"狎昵恶少，久必受其累", py:"xiá nì è shǎo, jiǔ bì shòu qí lèi"},
+    {hz:"屈志老成，急则可相依", py:"qū zhì lǎo chéng, jí zé kě xiāng yī"},
+  ],
+  // ===== 三思而行 =====
+  [
+    {hz:"轻听发言，安知非人之谮诉，当忍耐三思", py:"qīng tīng fā yán, ān zhī fēi rén zhī zèn sù, dāng rěn nài sān sī"},
+    {hz:"因事相争，安知非我之不是，须平心暗想", py:"yīn shì xiāng zhēng, ān zhī fēi wǒ zhī bù shì, xū píng xīn àn xiǎng"},
+    {hz:"施惠无念", py:"shī huì wú niàn"},
+    {hz:"受恩莫忘", py:"shòu ēn mò wàng"},
+  ],
+  // ===== 留有余地 =====
+  [
+    {hz:"凡事当留余地", py:"fán shì dāng liú yú dì"},
+    {hz:"得意不宜再往", py:"dé yì bù yí zài wǎng"},
+    {hz:"人有喜庆，不可生妒忌心", py:"rén yǒu xǐ qìng, bù kě shēng dù jì xīn"},
+    {hz:"人有祸患，不可生喜幸心", py:"rén yǒu huò huàn, bù kě shēng xǐ xìng xīn"},
+  ],
+  // ===== 善恶之辨 =====
+  [
+    {hz:"善欲人见，不是真善", py:"shàn yù rén jiàn, bù shì zhēn shàn"},
+    {hz:"恶恐人知，便是大恶", py:"è kǒng rén zhī, biàn shì dà è"},
+    {hz:"见色而起淫心，报在妻女", py:"jiàn sè ér qǐ yín xīn, bào zài qī nǚ"},
+    {hz:"匿怨而用暗箭，祸延子孙", py:"nì yuàn ér yòng àn jiàn, huò yán zǐ sūn"},
+  ],
+  // ===== 知足常乐 =====
+  [
+    {hz:"家门和顺，虽饔飧不继，亦有余欢", py:"jiā mén hé shùn, suī yōng sūn bù jì, yì yǒu yú huān"},
+    {hz:"国课早完，即囊橐无余，自得至乐", py:"guó kè zǎo wán, jí náng tuó wú yú, zì dé zhì lè"},
+  ],
+  // ===== 立身宗旨 =====
+  [
+    {hz:"读书志在圣贤", py:"dú shū zhì zài shèng xián"},
+    {hz:"为官心存君国", py:"wèi guān xīn cún jūn guó"},
+    {hz:"守分安命", py:"shǒu fēn ān mìng"},
+    {hz:"顺时听天", py:"shùn shí tīng tiān"},
+    {hz:"为人若此", py:"wèi rén ruò cǐ"},
+    {hz:"庶乎近焉", py:"shù hū jìn yān"},
+  ],
+];
+
+const SECTION_TITLES = [
+  "治家之始", "惜物节用", "俭约持家", "戒奢戒色", "敬祖教子", "戒贪戒酒", "待人接物", "伦常为重", "孝悌本分", "嫁娶之道", "处世之戒", "戒恃戒贪", "戒惰自省", "三思而行", "留有余地", "善恶之辨", "知足常乐", "立身宗旨",
+];
+
+// ── 渲染 ──
+const reader = document.getElementById('reader');
+const PUNCT_RE = /^[，。！？；：、,.!?;:]$/;
+const PUNCT_MAP = { '，': ',', '。': '.', '；': ';', '：': ':', '！': '!', '？': '?' };
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function normalizePunct(char) {
+  return PUNCT_MAP[char] || char;
+}
+
+function alignPinyin(hz, py) {
+  const chars = Array.from(hz);
+  const words = py.trim().split(/\s+/).filter(Boolean);
+  let wordIndex = 0;
+  let pendingPunct = '';
+
+  return chars.map(char => {
+    if (PUNCT_RE.test(char)) {
+      const sound = pendingPunct || normalizePunct(char);
+      pendingPunct = '';
+      return { hz: char, py: sound, punct: true };
+    }
+
+    let sound = words[wordIndex++] || '';
+    const punctMatch = sound.match(/^(.+?)([,，.。;；:：!?！？])$/);
+    if (punctMatch) {
+      sound = punctMatch[1];
+      pendingPunct = normalizePunct(punctMatch[2]);
+    }
+
+    return { hz: char, py: sound, punct: false };
+  });
+}
+
+function renderVerse(verse) {
+  const cells = alignPinyin(verse.hz, verse.py).map(cell => {
+    const cls = cell.punct ? 'zi punct' : 'zi';
+    return `<span class="${cls}"><span class="py">${escapeHtml(cell.py)}</span><span class="hz">${escapeHtml(cell.hz)}</span></span>`;
+  }).join('');
+  return `<div class="verse" style="--cols:${Array.from(verse.hz).length}">${cells}</div>`;
+}
+
+const frag = document.createDocumentFragment();
+ZHUZIJIAXUN.forEach((para, i) => {
+  const sec = document.createElement('section');
+  sec.className = 'sec';
+  sec.id = 'sec-' + i;
+  const title = SECTION_TITLES[i] || '';
+  sec.innerHTML =
+    (title ? `<h2 class="sec-title">${escapeHtml(title)}</h2>` : '') +
+    `<div class="para">${para.map(renderVerse).join('')}</div>`;
+  frag.appendChild(sec);
+});
+reader.appendChild(frag);
+
+// ── 浮动目录 ──
+const btnToc = document.getElementById('btnToc');
+const tocDrawer = document.getElementById('tocDrawer');
+const tocOverlay = document.getElementById('tocOverlay');
+const tocList = document.getElementById('tocList');
+
+SECTION_TITLES.forEach((t, i) => {
+  const li = document.createElement('li');
+  li.textContent = (i + 1) + '. ' + t;
+  li.addEventListener('click', () => {
+    closeToc();
+    const target = document.getElementById('sec-' + i);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  tocList.appendChild(li);
+});
+
+function openToc() { tocDrawer.classList.add('show'); tocOverlay.classList.add('show'); }
+function closeToc() { tocDrawer.classList.remove('show'); tocOverlay.classList.remove('show'); }
+btnToc.addEventListener('click', openToc);
+tocOverlay.addEventListener('click', closeToc);
+
+// ── 拼音切换 ──
+const btnPinyin = document.getElementById('btnPinyin');
+let pinyinVisible = false;
+
+function setPinyin(visible) {
+  pinyinVisible = visible;
+  // 直接给每个 .py 设置内联 visibility——内联样式优先级最高，
+  // 不依赖 class 级联或 CSS 变量继承（这两种方式在 iframe 内被证实不可靠）
+  document.querySelectorAll('.py').forEach(el => {
+    el.style.visibility = visible ? 'visible' : 'hidden';
+  });
+  btnPinyin.textContent = visible ? '隐藏拼音' : '显示拼音';
+  forceIframeRepaint();
+}
+
+// 移动端 Safari(WebKit) 及部分移动浏览器在 iframe 内对 visibility 变更「惰性重绘」：
+// 状态已改对但屏幕不刷新（实测：手动全屏改变 iframe 尺寸后才显示）。
+// 这里每次切换都把承载本页的 iframe 高度抖动 1px 再还原，自动复刻那次 resize 重绘触发。
+// 顶层文档或跨源时 window.frameElement 为 null / 抛错，直接跳过（那些场景本就会正常重绘）。
+function forceIframeRepaint() {
+  let frame;
+  try { frame = window.frameElement; } catch (e) { return; }
+  if (!frame) return;
+  const prev = frame.style.height;
+  const h = Math.round(frame.getBoundingClientRect().height);
+  if (!h) return;
+  frame.style.height = (h - 1) + 'px';
+  void frame.offsetHeight;                 // 强制同步重排，让缩小的尺寸真正生效一次
+  requestAnimationFrame(() => { frame.style.height = prev || ''; });
+}
+
+btnPinyin.addEventListener('click', () => { setPinyin(!pinyinVisible); });
+
+
+// ── 滚动位置记忆 ──
+const LS_KEY_SCROLL = 'zhuzijiaxun-scroll';
+let saveTimer = null;
+
+function saveScroll() {
+  try { localStorage.setItem(LS_KEY_SCROLL, String(window.scrollY)); } catch (e) {}
+}
+
+function restoreScroll() {
+  try {
+    const saved = localStorage.getItem(LS_KEY_SCROLL);
+    if (saved !== null) {
+      const y = parseInt(saved, 10);
+      if (y > 0) {
+        window.scrollTo({ top: y, behavior: 'instant' });
+        showToast('已恢复上次阅读位置');
+      }
+    }
+  } catch (e) {}
+}
+
+// 滚动时防抖保存
+window.addEventListener('scroll', () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveScroll, 2000);
+}, { passive: true });
+
+// 离开时保存
+window.addEventListener('beforeunload', saveScroll);
+// 页面隐藏时也保存（移动端切换 app）
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) saveScroll();
+});
+
+// ── Toast ──
+const toast = document.getElementById('toast');
+let toastTimer = null;
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ── 启动：页面完全渲染后恢复滚动位置 ──
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(restoreScroll, 1200);
+});
+</script>
+
+</body>
+</html>
