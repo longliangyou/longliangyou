@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>太上老君说常清静经</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --text: #3d2b1f;
+    --py-color: #a08060;
+    --btn-bg: #e8ddd0;
+    --btn-text: #5d4037;
+    --btn-border: #c4b8a8;
+    --toast-bg: #3d2b1f;
+    --toast-text: #f5f0e8;
+    --para-gap: 3em;
+    --verse-gap: 0.6em;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Songti SC", "宋体", "SimSun", "Noto Serif CJK SC", serif;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── top bar ── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+    pointer-events: none;
+  }
+  .topbar > * { pointer-events: auto; }
+
+  .topbar-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text);
+    opacity: 0.7;
+  }
+
+  .btn-pinyin {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    padding: 8px 18px;
+    border: 1px solid var(--btn-border);
+    border-radius: 20px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    /* 右侧留白把按钮左移一个按钮位，避开父页面悬浮在右上角的「全屏」按钮 */
+    margin-right: 84px;
+  }
+  .btn-pinyin:active { background: var(--btn-border); }
+
+  /* ── reading area ── */
+  .reader {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 80px 24px 60px;
+  }
+
+  /* ── paragraph ── */
+  .para { margin-bottom: var(--para-gap); }
+
+  /* ── verse line: every hanzi/punctuation occupies one equal column ── */
+  .verse {
+    --cell-width: 3.25em;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    align-items: end;
+    width: min(100%, calc(var(--cols) * var(--cell-width)));
+    margin: 0 auto var(--verse-gap);
+    text-align: center;
+  }
+
+  .zi {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .hz {
+    width: 100%;
+    font-size: 32px;
+    line-height: 1.45;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
+  .py {
+    width: 100%;
+    min-height: 1.35em;
+    color: var(--py-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 13px;
+    line-height: 1.25;
+    letter-spacing: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    visibility: hidden;
+  }
+
+  .zi.punct .py { font-size: 15px; }
+
+  /* ── section title (目录锚点) ── */
+  .sec { scroll-margin-top: 64px; }
+  .sec-title {
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    font-weight: normal;
+    color: var(--py-color);
+    letter-spacing: 0.18em;
+    opacity: 0.72;
+    margin: 0 0 1.1em;
+  }
+
+  /* ── 浮动目录：右下浮标 + 右侧抽屉 ── */
+  .btn-toc {
+    position: fixed;
+    right: 18px; bottom: 22px;
+    z-index: 150;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-toc:active { background: var(--btn-border); }
+
+  .toc-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s;
+    z-index: 200;
+  }
+  .toc-overlay.show { opacity: 1; pointer-events: auto; }
+
+  .toc-drawer {
+    position: fixed; top: 0; right: 0;
+    height: 100%; width: min(78vw, 300px);
+    background: var(--bg);
+    box-shadow: -6px 0 24px rgba(0,0,0,.22);
+    transform: translateX(100%);
+    transition: transform .28s ease;
+    z-index: 201;
+    display: flex; flex-direction: column;
+  }
+  .toc-drawer.show { transform: translateX(0); }
+
+  .toc-header {
+    padding: 18px 20px 12px;
+    font-weight: bold; font-size: 17px;
+    color: var(--text);
+    border-bottom: 1px solid var(--btn-border);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .toc-list {
+    list-style: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 0;
+    flex: 1;
+  }
+  .toc-list li {
+    padding: 11px 20px;
+    font-size: 15px;
+    color: var(--text);
+    cursor: pointer;
+    border-bottom: 1px solid rgba(196,184,168,.28);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toc-list li:active { background: var(--btn-bg); }
+
+
+  /* ── toast ── */
+  .toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--toast-bg);
+    color: var(--toast-text);
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── responsive ── */
+  @media (max-width: 480px) {
+    .verse { --cell-width: 2.85em; }
+    .hz { font-size: 28px; }
+    .py { font-size: 11.5px; }
+    .reader { padding: 72px 16px 48px; }
+    .topbar { padding: 10px 14px; }
+  }
+</style>
+</head>
+<body class="pinyin-hidden">
+
+<div class="topbar">
+  <span class="topbar-title">太上老君说常清静经</span>
+  <button class="btn-pinyin" id="btnPinyin" aria-label="切换拼音显示">显示拼音</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="reader" id="reader"></div>
+
+<button class="btn-toc" id="btnToc" aria-label="打开目录">目录</button>
+<div class="toc-overlay" id="tocOverlay"></div>
+<aside class="toc-drawer" id="tocDrawer" aria-label="目录">
+  <div class="toc-header">目录</div>
+  <ul class="toc-list" id="tocList"></ul>
+</aside>
+
+<script>
+// ── 《太上老君说常清静经》通行本正文 ──
+const QINGJINGJING = [
+  [
+    {hz:"老君曰：大道无形，生育天地；", py:"lǎo jūn yuē: dà dào wú xíng, shēng yù tiān dì;"},
+    {hz:"大道无情，运行日月；", py:"dà dào wú qíng, yùn xíng rì yuè;"},
+    {hz:"大道无名，长养万物；", py:"dà dào wú míng, zhǎng yǎng wàn wù;"},
+    {hz:"吾不知其名，强名曰道。", py:"wú bù zhī qí míng, qiǎng míng yuē dào."},
+    {hz:"夫道者：有清有浊，有动有静；", py:"fū dào zhě: yǒu qīng yǒu zhuó, yǒu dòng yǒu jìng;"},
+    {hz:"天清地浊，天动地静；", py:"tiān qīng dì zhuó, tiān dòng dì jìng;"},
+    {hz:"男清女浊，男动女静；", py:"nán qīng nǚ zhuó, nán dòng nǚ jìng;"},
+    {hz:"降本流末，而生万物。", py:"jiàng běn liú mò, ér shēng wàn wù."},
+    {hz:"清者浊之源，动者静之基。", py:"qīng zhě zhuó zhī yuán, dòng zhě jìng zhī jī."},
+    {hz:"人能常清静，天地悉皆归。", py:"rén néng cháng qīng jìng, tiān dì xī jiē guī."},
+  ],
+  [
+    {hz:"夫人神好清，而心扰之；", py:"fū rén shén hào qīng, ér xīn rǎo zhī;"},
+    {hz:"人心好静，而欲牵之。", py:"rén xīn hào jìng, ér yù qiān zhī."},
+    {hz:"常能遣其欲，而心自静；", py:"cháng néng qiǎn qí yù, ér xīn zì jìng;"},
+    {hz:"澄其心，而神自清。", py:"chéng qí xīn, ér shén zì qīng."},
+    {hz:"自然六欲不生，三毒消灭。", py:"zì rán liù yù bù shēng, sān dú xiāo miè."},
+    {hz:"所以不能者，为心未澄，欲未遣也。", py:"suǒ yǐ bù néng zhě, wèi xīn wèi chéng, yù wèi qiǎn yě."},
+  ],
+  [
+    {hz:"能遣之者：内观其心，心无其心；", py:"néng qiǎn zhī zhě: nèi guān qí xīn, xīn wú qí xīn;"},
+    {hz:"外观其形，形无其形；", py:"wài guān qí xíng, xíng wú qí xíng;"},
+    {hz:"远观其物，物无其物。", py:"yuǎn guān qí wù, wù wú qí wù."},
+    {hz:"三者既悟，唯见于空。", py:"sān zhě jì wù, wéi jiàn yú kōng."},
+    {hz:"观空亦空，空无所空；", py:"guān kōng yì kōng, kōng wú suǒ kōng;"},
+    {hz:"所空既无，无无亦无；", py:"suǒ kōng jì wú, wú wú yì wú;"},
+    {hz:"无无既无，湛然常寂。", py:"wú wú jì wú, zhàn rán cháng jì."},
+    {hz:"寂无所寂，欲岂能生？", py:"jì wú suǒ jì, yù qǐ néng shēng?"},
+    {hz:"欲既不生，即是真静。", py:"yù jì bù shēng, jí shì zhēn jìng."},
+  ],
+  [
+    {hz:"真常应物，真常得性；", py:"zhēn cháng yìng wù, zhēn cháng dé xìng;"},
+    {hz:"常应常静，常清静矣。", py:"cháng yìng cháng jìng, cháng qīng jìng yǐ."},
+    {hz:"如此清静，渐入真道；", py:"rú cǐ qīng jìng, jiàn rù zhēn dào;"},
+    {hz:"既入真道，名为得道；", py:"jì rù zhēn dào, míng wéi dé dào;"},
+    {hz:"虽名得道，实无所得。", py:"suī míng dé dào, shí wú suǒ dé."},
+    {hz:"为化众生，名为得道；", py:"wèi huà zhòng shēng, míng wéi dé dào;"},
+    {hz:"能悟之者，可传圣道。", py:"néng wù zhī zhě, kě chuán shèng dào."},
+  ],
+  [
+    {hz:"老君曰：上士无争，下士好争；", py:"lǎo jūn yuē: shàng shì wú zhēng, xià shì hào zhēng;"},
+    {hz:"上德不德，下德执德。", py:"shàng dé bù dé, xià dé zhí dé."},
+    {hz:"执著之者，不明道德。", py:"zhí zhuó zhī zhě, bù míng dào dé."},
+    {hz:"众生所以不得真道者，为有妄心。", py:"zhòng shēng suǒ yǐ bù dé zhēn dào zhě, wèi yǒu wàng xīn."},
+    {hz:"既有妄心，即惊其神；", py:"jì yǒu wàng xīn, jí jīng qí shén;"},
+    {hz:"既惊其神，即著万物；", py:"jì jīng qí shén, jí zhuó wàn wù;"},
+    {hz:"既著万物，即生贪求；", py:"jì zhuó wàn wù, jí shēng tān qiú;"},
+    {hz:"既生贪求，即是烦恼。", py:"jì shēng tān qiú, jí shì fán nǎo."},
+    {hz:"烦恼妄想，忧苦身心；", py:"fán nǎo wàng xiǎng, yōu kǔ shēn xīn;"},
+    {hz:"便遭浊辱，流浪生死；", py:"biàn zāo zhuó rǔ, liú làng shēng sǐ;"},
+    {hz:"常沉苦海，永失真道。", py:"cháng chén kǔ hǎi, yǒng shī zhēn dào."},
+    {hz:"真常之道，悟者自得；", py:"zhēn cháng zhī dào, wù zhě zì dé;"},
+    {hz:"得悟道者，常清静矣。", py:"dé wù dào zhě, cháng qīng jìng yǐ."},
+  ],
+];
+
+const SECTION_TITLES = ["道体", "遣欲澄心", "观空入寂", "真常得道", "妄心失道"];
+
+// ── 渲染 ──
+const reader = document.getElementById('reader');
+const PUNCT_RE = /^[，。！？；：、,.!?;:]$/;
+const PUNCT_MAP = { '，': ',', '。': '.', '；': ';', '：': ':', '！': '!', '？': '?' };
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function normalizePunct(char) {
+  return PUNCT_MAP[char] || char;
+}
+
+function alignPinyin(hz, py) {
+  const chars = Array.from(hz);
+  const words = py.trim().split(/\s+/).filter(Boolean);
+  let wordIndex = 0;
+  let pendingPunct = '';
+
+  return chars.map(char => {
+    if (PUNCT_RE.test(char)) {
+      const sound = pendingPunct || normalizePunct(char);
+      pendingPunct = '';
+      return { hz: char, py: sound, punct: true };
+    }
+
+    let sound = words[wordIndex++] || '';
+    const punctMatch = sound.match(/^(.+?)([,，.。;；:：!?！？])$/);
+    if (punctMatch) {
+      sound = punctMatch[1];
+      pendingPunct = normalizePunct(punctMatch[2]);
+    }
+
+    return { hz: char, py: sound, punct: false };
+  });
+}
+
+function renderVerse(verse) {
+  const cells = alignPinyin(verse.hz, verse.py).map(cell => {
+    const cls = cell.punct ? 'zi punct' : 'zi';
+    return `<span class="${cls}"><span class="py">${escapeHtml(cell.py)}</span><span class="hz">${escapeHtml(cell.hz)}</span></span>`;
+  }).join('');
+  return `<div class="verse" style="--cols:${Array.from(verse.hz).length}">${cells}</div>`;
+}
+
+const frag = document.createDocumentFragment();
+QINGJINGJING.forEach((para, i) => {
+  const sec = document.createElement('section');
+  sec.className = 'sec';
+  sec.id = 'sec-' + i;
+  const title = SECTION_TITLES[i] || '';
+  sec.innerHTML =
+    (title ? `<h2 class="sec-title">${escapeHtml(title)}</h2>` : '') +
+    `<div class="para">${para.map(renderVerse).join('')}</div>`;
+  frag.appendChild(sec);
+});
+reader.appendChild(frag);
+
+// ── 浮动目录 ──
+const btnToc = document.getElementById('btnToc');
+const tocDrawer = document.getElementById('tocDrawer');
+const tocOverlay = document.getElementById('tocOverlay');
+const tocList = document.getElementById('tocList');
+
+SECTION_TITLES.forEach((t, i) => {
+  const li = document.createElement('li');
+  li.textContent = (i + 1) + '. ' + t;
+  li.addEventListener('click', () => {
+    closeToc();
+    const target = document.getElementById('sec-' + i);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  tocList.appendChild(li);
+});
+
+function openToc() { tocDrawer.classList.add('show'); tocOverlay.classList.add('show'); }
+function closeToc() { tocDrawer.classList.remove('show'); tocOverlay.classList.remove('show'); }
+btnToc.addEventListener('click', openToc);
+tocOverlay.addEventListener('click', closeToc);
+
+// ── 拼音切换 ──
+const btnPinyin = document.getElementById('btnPinyin');
+let pinyinVisible = false;
+
+function setPinyin(visible) {
+  pinyinVisible = visible;
+  // 直接给每个 .py 设置内联 visibility——内联样式优先级最高，
+  // 不依赖 class 级联或 CSS 变量继承（这两种方式在 iframe 内被证实不可靠）
+  document.querySelectorAll('.py').forEach(el => {
+    el.style.visibility = visible ? 'visible' : 'hidden';
+  });
+  btnPinyin.textContent = visible ? '隐藏拼音' : '显示拼音';
+  forceIframeRepaint();
+}
+
+// 移动端 Safari(WebKit) 及部分移动浏览器在 iframe 内对 visibility 变更「惰性重绘」：
+// 状态已改对但屏幕不刷新（实测：手动全屏改变 iframe 尺寸后才显示）。
+// 这里每次切换都把承载本页的 iframe 高度抖动 1px 再还原，自动复刻那次 resize 重绘触发。
+// 顶层文档或跨源时 window.frameElement 为 null / 抛错，直接跳过（那些场景本就会正常重绘）。
+function forceIframeRepaint() {
+  let frame;
+  try { frame = window.frameElement; } catch (e) { return; }
+  if (!frame) return;
+  const prev = frame.style.height;
+  const h = Math.round(frame.getBoundingClientRect().height);
+  if (!h) return;
+  frame.style.height = (h - 1) + 'px';
+  void frame.offsetHeight;                 // 强制同步重排，让缩小的尺寸真正生效一次
+  requestAnimationFrame(() => { frame.style.height = prev || ''; });
+}
+
+btnPinyin.addEventListener('click', () => { setPinyin(!pinyinVisible); });
+
+
+// ── 滚动位置记忆 ──
+const LS_KEY_SCROLL = 'qingjingjing-scroll';
+let saveTimer = null;
+
+function saveScroll() {
+  try { localStorage.setItem(LS_KEY_SCROLL, String(window.scrollY)); } catch (e) {}
+}
+
+function restoreScroll() {
+  try {
+    const saved = localStorage.getItem(LS_KEY_SCROLL);
+    if (saved !== null) {
+      const y = parseInt(saved, 10);
+      if (y > 0) {
+        window.scrollTo({ top: y, behavior: 'instant' });
+        showToast('已恢复上次阅读位置');
+      }
+    }
+  } catch (e) {}
+}
+
+// 滚动时防抖保存
+window.addEventListener('scroll', () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveScroll, 2000);
+}, { passive: true });
+
+// 离开时保存
+window.addEventListener('beforeunload', saveScroll);
+// 页面隐藏时也保存（移动端切换 app）
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) saveScroll();
+});
+
+// ── Toast ──
+const toast = document.getElementById('toast');
+let toastTimer = null;
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ── 启动：页面完全渲染后恢复滚动位置 ──
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(restoreScroll, 1200);
+});
+</script>
+
+</body>
+</html>
