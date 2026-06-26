@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>看图写话·观察篇</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh; padding: 16px;
+  display: flex; justify-content: center; align-items: flex-start;
+}
+#app { width: 100%; max-width: 500px; }
+.card { background: #fff; border-radius: 24px; padding: 22px; box-shadow: 0 12px 40px rgba(0,0,0,.18); }
+
+ruby { ruby-align: center; }
+rt { font-size: .52em; color: #9aa; font-weight: 400; line-height: 1; }
+body.no-pinyin rt { display: none; }
+
+/* header */
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.steps { display: flex; gap: 6px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; background: #e3e3ef; }
+.dot.done { background: #43e97b; }
+.dot.cur { background: #f5576c; transform: scale(1.25); }
+.py-toggle {
+  border: 1px solid #d9d9ef; background: #f6f6fc; color: #667; border-radius: 999px;
+  padding: 6px 12px; font: 600 13px/1 inherit; cursor: pointer;
+}
+.py-toggle.on { background: #eef0ff; color: #5b5be0; border-color: #c8c8f5; }
+
+h1 { font-size: 22px; color: #4a3f8f; text-align: center; margin-bottom: 4px; }
+.subtitle { text-align: center; color: #9a93c0; font-size: 13px; margin-bottom: 18px; }
+.scene-tag { display:inline-block; background:#fff0f4; color:#f5576c; border-radius:999px; padding:4px 12px; font-size:13px; font-weight:700; margin-bottom:12px; }
+
+.scene-img { width: 100%; border-radius: 16px; display: block; box-shadow: 0 4px 14px rgba(0,0,0,.12); margin-bottom: 16px; }
+
+.q { font-size: 19px; font-weight: 700; color: #333; margin-bottom: 16px; line-height: 1.7; }
+
+.btn {
+  display: block; width: 100%; padding: 15px 12px; border: none; border-radius: 14px;
+  font-size: 18px; font-weight: 700; cursor: pointer; margin-bottom: 11px;
+  transition: transform .1s, box-shadow .1s; font-family: inherit; line-height: 1.5;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: linear-gradient(135deg, #f093fb, #f5576c); color: #fff; box-shadow: 0 4px 15px rgba(245,87,108,.4); }
+.btn-opt { background: #f4f5fb; color: #333; text-align: left; padding-left: 18px; border: 2px solid transparent; }
+.btn-opt.right { background: #e8fbf0; border-color: #43e97b; color: #1b9e5a; }
+.btn-opt.wrong { background: #ffeef0; border-color: #f5576c; color: #d6324c; animation: shake .3s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
+
+/* match (连线) */
+.match-wrap { display: flex; gap: 14px; }
+.match-col { flex: 1; display: flex; flex-direction: column; gap: 11px; }
+.chip {
+  padding: 14px 8px; border-radius: 14px; background: #f4f5fb; border: 2px solid transparent;
+  font-size: 17px; font-weight: 700; color: #333; cursor: pointer; text-align: center; line-height: 1.4;
+}
+.chip.sel { border-color: #5b5be0; background: #eef0ff; }
+.chip.matched { background: #e8fbf0; border-color: #43e97b; color: #1b9e5a; cursor: default; }
+.match-hint { text-align:center; color:#9a93c0; font-size:13px; margin:14px 0 4px; }
+
+/* order (排序) */
+.order-pick { display: flex; flex-direction: column; gap: 11px; }
+.order-slots { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; min-height: 8px; }
+.slot { display:flex; align-items:center; gap:10px; }
+.slot .num { width:30px; height:30px; flex:0 0 30px; border-radius:50%; background:#f5576c; color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:15px; }
+.slot .txt { flex:1; background:#e8fbf0; border:2px solid #43e97b; color:#1b9e5a; border-radius:12px; padding:12px; font-weight:700; font-size:16px; line-height:1.45; }
+.order-label { font-size:13px; color:#9a93c0; text-align:center; margin-bottom:10px; }
+
+/* feedback */
+.feedback { text-align: center; font-size: 17px; font-weight: 700; min-height: 26px; margin: 6px 0 12px; }
+.feedback.ok { color: #1b9e5a; }
+.feedback.no { color: #f5576c; }
+
+/* result */
+.result { text-align: center; padding: 10px 0; }
+.result .emoji { font-size: 64px; margin-bottom: 8px; }
+.result h2 { font-size: 26px; color: #4a3f8f; margin-bottom: 8px; }
+.result p { color: #7a73a8; font-size: 16px; line-height: 1.8; margin-bottom: 20px; }
+
+.start-hero { text-align: center; }
+.start-hero .big { font-size: 56px; margin-bottom: 6px; }
+.start-hero p { color: #7a73a8; font-size: 15px; line-height: 1.9; margin: 14px 0 22px; }
+</style>
+</head>
+<body class="no-pinyin">
+<div id="app"></div>
+
+<script>
+const PYMAP={"一": "yī", "上": "shàng", "下": "xià", "不": "bù", "业": "yè", "东": "dōng", "主": "zhǔ", "么": "me", "也": "yě", "买": "mǎi", "了": "le", "事": "shì", "二": "èr", "于": "yú", "人": "rén", "什": "shén", "仔": "zǎi", "们": "men", "件": "jiàn", "会": "huì", "伸": "shēn", "作": "zuò", "你": "nǐ", "信": "xìn", "倒": "dào", "值": "zhí", "做": "zuò", "先": "xiān", "全": "quán", "公": "gōng", "六": "liù", "关": "guān", "兴": "xīng", "内": "nèi", "再": "zài", "写": "xiě", "出": "chū", "前": "qián", "办": "bàn", "功": "gōng", "动": "dòng", "午": "wǔ", "去": "qù", "友": "yǒu", "发": "fā", "只": "zhī", "吧": "ba", "员": "yuán", "和": "hé", "哪": "nǎ", "商": "shāng", "啦": "la", "四": "sì", "因": "yīn", "园": "yuán", "图": "tú", "在": "zài", "地": "dì", "场": "chǎng", "坐": "zuò", "大": "dà", "好": "hǎo", "始": "shǐ", "子": "zi", "它": "tā", "安": "ān", "室": "shì", "家": "jiā", "容": "róng", "察": "chá", "对": "duì", "小": "xiǎo", "左": "zuǒ", "师": "shī", "带": "dài", "幅": "fú", "干": "gàn", "序": "xù", "店": "diàn", "开": "kāi", "很": "hěn", "得": "dé", "心": "xīn", "情": "qíng", "想": "xiǎng", "戏": "xì", "成": "chéng", "手": "shǒu", "找": "zhǎo", "把": "bǎ", "拼": "pīn", "按": "àn", "掉": "diào", "排": "pái", "提": "tí", "故": "gù", "救": "jiù", "教": "jiào", "方": "fāng", "日": "rì", "是": "shì", "景": "jǐng", "最": "zuì", "朋": "péng", "来": "lái", "果": "guǒ", "枝": "zhī", "树": "shù", "桶": "tǒng", "次": "cì", "步": "bù", "水": "shuǐ", "法": "fǎ", "洞": "dòng", "海": "hǎi", "游": "yóu", "点": "diǎn", "热": "rè", "熊": "xióng", "物": "wù", "狗": "gǒu", "猴": "hóu", "玩": "wán", "生": "shēng", "用": "yòng", "的": "de", "看": "kàn", "真": "zhēn", "着": "zhe", "睡": "shuì", "第": "dì", "答": "dá", "篇": "piān", "素": "sù", "线": "xiàn", "组": "zǔ", "细": "xì", "终": "zhōng", "经": "jīng", "结": "jié", "继": "jì", "续": "xù", "群": "qún", "老": "lǎo", "联": "lián", "能": "néng", "色": "sè", "草": "cǎo", "荡": "dàng", "藏": "cáng", "西": "xī", "要": "yào", "观": "guān", "觉": "jiào", "角": "jué", "记": "jì", "讲": "jiǎng", "话": "huà", "谁": "shuí", "象": "xiàng", "起": "qǐ", "躺": "tǎng", "边": "biān", "过": "guò", "还": "hái", "这": "zhè", "进": "jìn", "连": "lián", "送": "sòng", "递": "dì", "邮": "yóu", "部": "bù", "都": "dōu", "里": "lǐ", "重": "zhòng", "长": "cháng", "问": "wèn", "闯": "chuǎng", "闹": "nào", "队": "duì", "静": "jìng", "音": "yīn", "顺": "shùn", "高": "gāo", "鸭": "yā", "鼻": "bí"};
+function py(text){
+  let out='';
+  for(const ch of text){
+    if(PYMAP[ch]) out+='<ruby>'+ch+'<rt>'+PYMAP[ch]+'</rt></ruby>';
+    else out+=ch;
+  }
+  return out;
+}
+
+const TOTAL=6;
+let cur=0;          // 0..5 current level index
+let pinyinOn=false;
+
+/* ---------- level definitions ---------- */
+const LEVELS=[
+  { type:'choice', scene:'park', tag:'场景一·公园',
+    q:'仔细看图，这幅图的主要角色是谁？',
+    options:['一群小朋友','一只小狗','值日的老师','送信的邮递员'], answer:0 },
+  { type:'choice', scene:'park', tag:'场景一·公园',
+    q:'故事发生在什么地方？',
+    options:['草地上（公园里）','安静的教室','热闹的商店','大海边'], answer:0 },
+  { type:'choice', scene:'park', tag:'场景一·公园',
+    q:'图里的小朋友在做什么？',
+    options:['在草地上做游戏','在排队买东西','坐着写作业','躺着睡午觉'], answer:0 },
+  { type:'match', scene:'park', tag:'场景一·四要素',
+    title:'把“四要素”和图里的内容连一连',
+    left:['人物','地点','干什么','心情'],
+    right:['一群小朋友','草地上','做游戏','很开心'],
+    pairs:[[0,0],[1,1],[2,2],[3,3]] },
+  { type:'match', scene:'duck', tag:'场景二·联想',
+    title:'小动物们用什么办法救小鸭？连一连',
+    left:['小猴','大象','小熊'],
+    right:['提水桶倒水','荡来树枝','伸长鼻子'],
+    pairs:[[0,1],[1,2],[2,0]] },
+  { type:'order', scene:'duck', tag:'场景二·讲顺序',
+    title:'按“起因→经过→结果”把故事排好',
+    items:['小鸭子不小心掉进了洞里','小猴、大象、小熊都来想办法','小鸭子终于得救啦，大家真高兴'],
+    order:[0,1,2] }
+];
+
+const app=document.getElementById('app');
+
+function header(){
+  let dots='';
+  for(let i=0;i<TOTAL;i++){
+    dots+='<div class="dot '+(i<cur?'done':i===cur?'cur':'')+'"></div>';
+  }
+  return '<div class="topbar"><div class="steps">'+dots+'</div>'+
+    '<button class="py-toggle'+(pinyinOn?' on':'')+'" onclick="togglePinyin()">'+
+    py('拼音')+(pinyinOn?'·开':'·关')+'</button></div>';
+}
+function togglePinyin(){
+  pinyinOn=!pinyinOn;
+  document.body.classList.toggle('no-pinyin',!pinyinOn);
+  // re-render py-toggle label only (cheap: re-render whole screen keeps state for choice; safer full re-render)
+  renderLevel();
+}
+
+function sceneImg(scene){
+  const src=scene==='park'?'kantu-01-park.png':'kantu-01-duck.png';
+  return '<img class="scene-img" src="'+src+'" alt="看图">';
+}
+
+/* ---------- screens ---------- */
+function start(){
+  document.body.classList.toggle('no-pinyin',!pinyinOn);
+  app.innerHTML='<div class="card"><div class="start-hero">'+
+    '<div class="big">🔍</div>'+
+    '<h1>'+py('看图写话 · 观察篇')+'</h1>'+
+    '<div class="subtitle">'+py('看图找重点 + 带上联想去观察')+'</div>'+
+    '<p>'+py('看图写话第一步是会看图：找出主要角色、地点、事件；再带上联想，把藏在图里的故事想出来。一起闯六关吧！')+'</p>'+
+    '<button class="btn btn-primary" onclick="begin()">'+py('开始闯关')+'</button>'+
+    '</div></div>';
+}
+function begin(){ cur=0; renderLevel(); }
+
+function renderLevel(){
+  const lv=LEVELS[cur];
+  if(lv.type==='choice') return renderChoice(lv);
+  if(lv.type==='match')  return renderMatch(lv);
+  if(lv.type==='order')  return renderOrder(lv);
+}
+
+/* ---- choice ---- */
+function renderChoice(lv){
+  let opts='';
+  lv.options.forEach((o,i)=>{
+    opts+='<button class="btn btn-opt" data-i="'+i+'" onclick="pickChoice('+i+')">'+py(o)+'</button>';
+  });
+  app.innerHTML='<div class="card">'+header()+
+    '<div class="scene-tag">'+py(lv.tag)+'</div>'+
+    sceneImg(lv.scene)+
+    '<div class="q">'+py(lv.q)+'</div>'+
+    opts+
+    '<div class="feedback" id="fb"></div></div>';
+}
+let locked=false;
+function pickChoice(i){
+  if(locked) return;
+  const lv=LEVELS[cur];
+  const btn=app.querySelector('[data-i="'+i+'"]');
+  const fb=document.getElementById('fb');
+  if(i===lv.answer){
+    locked=true;
+    btn.classList.add('right');
+    fb.className='feedback ok'; fb.innerHTML=py('答对了！👏');
+    setTimeout(()=>{ locked=false; next(); },900);
+  }else{
+    btn.classList.add('wrong');
+    fb.className='feedback no'; fb.innerHTML=py('再看看图，想一想～');
+    setTimeout(()=>btn.classList.remove('wrong'),350);
+  }
+}
+
+/* ---- match (tap-tap connect) ---- */
+let selLeft=null, matchedCount=0;
+function renderMatch(lv){
+  selLeft=null; matchedCount=0;
+  const rorder=lv._rorder||(lv._rorder=shuffle([...lv.right.keys()]));
+  let lcol='', rcol='';
+  lv.left.forEach((t,i)=>{ lcol+='<div class="chip" data-side="L" data-i="'+i+'" onclick="tapLeft('+i+')">'+py(t)+'</div>'; });
+  rorder.forEach(ri=>{ rcol+='<div class="chip" data-side="R" data-i="'+ri+'" onclick="tapRight('+ri+')">'+py(lv.right[ri])+'</div>'; });
+  app.innerHTML='<div class="card">'+header()+
+    '<div class="scene-tag">'+py(lv.tag)+'</div>'+
+    sceneImg(lv.scene)+
+    '<div class="q">'+py(lv.title)+'</div>'+
+    '<div class="match-wrap"><div class="match-col">'+lcol+'</div><div class="match-col">'+rcol+'</div></div>'+
+    '<div class="match-hint" id="fb">'+py('先点左边，再点它的好朋友')+'</div></div>';
+}
+function tapLeft(i){
+  const el=leftEl(i); if(el.classList.contains('matched'))return;
+  app.querySelectorAll('.chip[data-side="L"]').forEach(c=>{ if(!c.classList.contains('matched'))c.classList.remove('sel'); });
+  selLeft=i; el.classList.add('sel');
+}
+function tapRight(ri){
+  if(selLeft===null) return;
+  const rel=app.querySelector('.chip[data-side="R"][data-i="'+ri+'"]');
+  if(rel.classList.contains('matched'))return;
+  const lv=LEVELS[cur];
+  const ok=lv.pairs.some(p=>p[0]===selLeft && p[1]===ri);
+  const fb=document.getElementById('fb');
+  if(ok){
+    leftEl(selLeft).classList.add('matched'); leftEl(selLeft).classList.remove('sel');
+    rel.classList.add('matched');
+    selLeft=null; matchedCount++;
+    if(matchedCount===lv.left.length){
+      fb.innerHTML=py('全部连对啦！🎉');
+      setTimeout(next,900);
+    }else{ fb.innerHTML=py('连对了一组，继续～'); }
+  }else{
+    rel.classList.add('wrong'); fb.innerHTML=py('它们不是一对，再想想');
+    setTimeout(()=>rel.classList.remove('wrong'),350);
+  }
+}
+function leftEl(i){ return app.querySelector('.chip[data-side="L"][data-i="'+i+'"]'); }
+
+/* ---- order (tap in sequence) ---- */
+let placed=[];
+function renderOrder(lv){
+  placed=[];
+  const sh=lv._sh||(lv._sh=shuffle([...lv.items.keys()]));
+  drawOrder(lv,sh);
+}
+function drawOrder(lv,sh){
+  let slots='';
+  placed.forEach((idx,n)=>{
+    slots+='<div class="slot"><div class="num">'+(n+1)+'</div><div class="txt">'+py(lv.items[idx])+'</div></div>';
+  });
+  let picks='';
+  sh.forEach(idx=>{
+    if(placed.includes(idx))return;
+    picks+='<button class="btn btn-opt" onclick="placeItem('+idx+')">'+py(lv.items[idx])+'</button>';
+  });
+  const labels=['起因','经过','结果'];
+  app.innerHTML='<div class="card">'+header()+
+    '<div class="scene-tag">'+py(lv.tag)+'</div>'+
+    sceneImg(lv.scene)+
+    '<div class="q">'+py(lv.title)+'</div>'+
+    '<div class="order-label">'+(placed.length?py('顺序：'+labels.slice(0,placed.length).join(' → ')):'&nbsp;')+'</div>'+
+    '<div class="order-slots">'+slots+'</div>'+
+    (picks?'<div class="order-pick">'+picks+'</div>':'')+
+    '<div class="feedback" id="fb"></div></div>';
+}
+function placeItem(idx){
+  const lv=LEVELS[cur];
+  const sh=lv._sh;
+  const step=placed.length;
+  if(lv.order[step]===idx){
+    placed.push(idx);
+    if(placed.length===lv.items.length){
+      drawOrder(lv,sh);
+      const fb=document.getElementById('fb');
+      fb.className='feedback ok'; fb.innerHTML=py('顺序排对啦！🎉');
+      setTimeout(next,1000);
+    }else{ drawOrder(lv,sh); }
+  }else{
+    drawOrder(lv,sh);
+    const fb=document.getElementById('fb');
+    fb.className='feedback no'; fb.innerHTML=py('这一步还不对，先想想最先发生什么');
+  }
+}
+
+/* ---- flow ---- */
+function next(){
+  cur++;
+  if(cur>=TOTAL) return result();
+  renderLevel();
+}
+function result(){
+  app.innerHTML='<div class="card"><div class="result">'+
+    '<div class="emoji">🏆</div>'+
+    '<h2>'+py('闯关成功！')+'</h2>'+
+    '<p>'+py('你会找重点，也会带上联想看图，真是观察小能手！下次写话前，记得先问：谁？在哪？做什么？')+'</p>'+
+    '<button class="btn btn-primary" onclick="restart()">'+py('再玩一次')+'</button>'+
+    '</div></div>';
+}
+function restart(){
+  LEVELS.forEach(l=>{ delete l._rorder; delete l._sh; });
+  cur=0; start();
+}
+
+/* ---- util ---- */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+start();
+</script>
+</body>
+</html>
