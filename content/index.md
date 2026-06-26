@@ -30,4 +30,4 @@ Hello!
 
 [复盘](./Thinking/%E5%A4%8D%E7%9B%98.md)
 
-<sub>· 73 ·</sub>
+<sub>· 74 ·</sub>
