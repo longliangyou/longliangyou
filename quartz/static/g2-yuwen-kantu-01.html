@@ -79,7 +79,14 @@ h1 { font-size: 22px; color: #4a3f8f; text-align: center; margin-bottom: 4px; }
 .result { text-align: center; padding: 10px 0; }
 .result .emoji { font-size: 64px; margin-bottom: 8px; }
 .result h2 { font-size: 26px; color: #4a3f8f; margin-bottom: 8px; }
-.result p { color: #7a73a8; font-size: 16px; line-height: 1.8; margin-bottom: 20px; }
+.result p { color: #7a73a8; font-size: 16px; line-height: 1.8; margin-bottom: 16px; }
+
+/* recap (重点回顾) */
+.recap { text-align: left; background: #f6f6fc; border-radius: 16px; padding: 16px 18px; margin: 4px 0 20px; }
+.recap h3 { font-size: 16px; color: #5b5be0; margin-bottom: 12px; text-align: center; }
+.recap .item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 11px; font-size: 15px; color: #444; line-height: 1.6; font-weight: 600; }
+.recap .item:last-child { margin-bottom: 0; }
+.recap .item .n { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; background: #f5576c; color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
 
 .start-hero { text-align: center; }
 .start-hero .big { font-size: 56px; margin-bottom: 6px; }
@@ -305,7 +312,12 @@ function result(){
   app.innerHTML='<div class="card"><div class="result">'+
     '<div class="emoji">🏆</div>'+
     '<h2>'+py('闯关成功！')+'</h2>'+
-    '<p>'+py('你会找重点，也会带上联想看图，真是观察小能手！下次写话前，记得先问：谁？在哪？做什么？')+'</p>'+
+    '<p>'+py('你会找重点，也会带上联想看图，真是观察小能手！')+'</p>'+
+    '<div class="recap"><h3>'+py('📝 这节课的重点')+'</h3>'+
+      '<div class="item"><div class="n">1</div><div>'+py('看图先找重点：谁？在哪？做什么？心情怎样？')+'</div></div>'+
+      '<div class="item"><div class="n">2</div><div>'+py('带上联想：把图里藏着的小故事想出来')+'</div></div>'+
+      '<div class="item"><div class="n">3</div><div>'+py('讲清顺序：起因 → 经过 → 结果')+'</div></div>'+
+    '</div>'+
     '<button class="btn btn-primary" onclick="restart()">'+py('再玩一次')+'</button>'+
     '</div></div>';
 }
